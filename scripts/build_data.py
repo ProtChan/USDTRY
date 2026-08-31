@@ -49,7 +49,7 @@ def parse_number(value: str) -> float:
 def parse_current_date(page_html: str) -> date:
     pair_pos = page_html.find("USD/JPY")
     prefix = page_html[:pair_pos] if pair_pos >= 0 else page_html[:12000]
-    # Previous/next navigation dates are links. The current page date is plain text.
+    # Navigation dates are links; the current page date is plain text.
     without_links = re.sub(r"<a\b[^>]*>.*?</a>", " ", prefix, flags=re.I | re.S)
     text = strip_tags(without_links)
     matches = DATE_RE.findall(text)
@@ -135,11 +135,19 @@ def main() -> None:
 
     while current_date >= START_DATE:
         values = parse_usdtry_row(page_html)
-        by_date[current_date.isoformat()] = {
+        candidate = {
             "date": current_date.isoformat(),
             **values,
             "source_url": current_url,
         }
+
+        # A daily scheduled check should not create a meaningless commit when
+        # Hirose has not published a new date and the latest row is unchanged.
+        if existing_latest == current_date and by_date.get(candidate["date"]) == candidate:
+            print(f"already up to date: {current_date.isoformat()}")
+            return
+
+        by_date[candidate["date"]] = candidate
         fetched += 1
         print(
             f"{current_date.isoformat()} days={values['days']} "
