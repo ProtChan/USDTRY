@@ -1,9 +1,9 @@
-name: Inspect Hirose source
+name: Test Hirose scraper
 
 on:
   push:
     paths:
-      - 'scripts/inspect_source.py'
+      - 'scripts/build_data.py'
       - '.github/workflows/inspect-source.yml'
   workflow_dispatch:
 
@@ -11,11 +11,19 @@ permissions:
   contents: read
 
 jobs:
-  inspect:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python scripts/inspect_source.py
+      - run: python scripts/build_data.py
+      - run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('data/usdtry.json'))
+          print(p['meta'])
+          print('first', p['data'][0])
+          print('last', p['data'][-1])
+          PY
