@@ -16,10 +16,10 @@
 
   <main class="shell">
     <header class="topbar">
-      <div>
+      <div class="brand-block">
         <div class="eyebrow"><span class="pulse"></span> HIROSE · LION FX</div>
         <h1>USD/TRY <span>Swap Watch</span></h1>
-        <p class="lead">売りスワップを、ヒロセ通商の円換算値から<strong>1日あたり</strong>に正規化。</p>
+        <p class="lead">売りスワップをヒロセ通商の円換算値から<strong>1日あたり</strong>に正規化。現在値・変化・履歴をひと目で確認できます。</p>
       </div>
       <div class="header-side">
         <div class="status-pill" id="statusPill">データ読込中</div>
@@ -30,46 +30,96 @@
       </div>
     </header>
 
-    <section class="kpi-grid" aria-label="主要指標">
-      <article class="kpi primary">
-        <div class="kpi-label">LATEST · 1日あたり</div>
-        <div class="kpi-value" id="latestValue">—</div>
-        <div class="kpi-meta" id="latestMeta">—</div>
+    <section class="snapshot-grid" aria-label="最新スワップ概要">
+      <article class="hero-kpi">
+        <div class="hero-kpi-top">
+          <div>
+            <div class="kpi-label">LATEST · 1日あたり</div>
+            <div class="hero-value" id="latestValue">—</div>
+            <div class="kpi-meta" id="latestMeta">—</div>
+          </div>
+          <div class="spark-wrap" aria-hidden="true"><canvas id="sparkChart"></canvas></div>
+        </div>
+        <div class="hero-bottom">
+          <span id="latestTotal">円換算合計 —</span>
+          <span id="latestPoints">売りポイント —</span>
+        </div>
       </article>
+
+      <div class="change-grid">
+        <article class="change-card">
+          <div class="change-label">前回比</div>
+          <div class="change-value" id="changePrev">—</div>
+          <div class="change-meta" id="changePrevMeta">直前付与日</div>
+        </article>
+        <article class="change-card">
+          <div class="change-label">7日前比</div>
+          <div class="change-value" id="changeWeek">—</div>
+          <div class="change-meta" id="changeWeekMeta">—</div>
+        </article>
+        <article class="change-card">
+          <div class="change-label">30日前比</div>
+          <div class="change-value" id="changeMonth">—</div>
+          <div class="change-meta" id="changeMonthMeta">—</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="kpi-grid" aria-label="統計指標">
       <article class="kpi">
         <div class="kpi-label">7 OBS AVG</div>
-        <div class="kpi-value small" id="avg7Value">—</div>
+        <div class="kpi-value" id="avg7Value">—</div>
         <div class="kpi-meta">直近7付与日の平均</div>
       </article>
       <article class="kpi">
         <div class="kpi-label">30 OBS AVG</div>
-        <div class="kpi-value small" id="avg30Value">—</div>
+        <div class="kpi-value" id="avg30Value">—</div>
         <div class="kpi-meta">直近30付与日の平均</div>
       </article>
       <article class="kpi">
         <div class="kpi-label">30D ESTIMATE</div>
-        <div class="kpi-value small" id="monthValue">—</div>
+        <div class="kpi-value" id="monthValue">—</div>
         <div class="kpi-meta">30回平均 × 30日</div>
+      </article>
+      <article class="kpi range-card high">
+        <div class="kpi-label">RANGE HIGH</div>
+        <div class="kpi-value" id="highValue">—</div>
+        <div class="kpi-meta" id="highMeta">—</div>
+      </article>
+      <article class="kpi range-card low">
+        <div class="kpi-label">RANGE LOW</div>
+        <div class="kpi-value" id="lowValue">—</div>
+        <div class="kpi-meta" id="lowMeta">—</div>
       </article>
     </section>
 
     <section class="panel chart-panel">
-      <div class="panel-head">
+      <div class="panel-head chart-head">
         <div>
           <div class="section-kicker">DAILY NORMALIZED SWAP</div>
           <h2>円換算・1日あたり推移</h2>
+          <p class="panel-sub">3日付与日は●で強調。線は1日あたりに正規化済みです。</p>
         </div>
-        <div class="chart-legend">
-          <span><i class="legend-dot actual"></i>実値</span>
-          <span><i class="legend-line"></i>7回移動平均</span>
+        <div class="chart-actions">
+          <div class="range-switch" role="group" aria-label="表示期間">
+            <button class="range-btn" data-range="30">30</button>
+            <button class="range-btn" data-range="90">90</button>
+            <button class="range-btn active" data-range="all">ALL</button>
+          </div>
+          <button class="download-btn" id="downloadCsv">CSV ↓</button>
         </div>
+      </div>
+      <div class="chart-legend">
+        <span><i class="legend-dot actual"></i>実値</span>
+        <span><i class="legend-line"></i>7回移動平均</span>
+        <span><i class="legend-triple"></i>3日付与</span>
       </div>
       <div class="chart-wrap">
         <canvas id="swapChart" aria-label="USDTRY swap chart"></canvas>
       </div>
       <div class="chart-foot">
         <span id="rangeLabel">2026/07/01 —</span>
-        <span>0日付与は日次換算不能のため線から除外</span>
+        <span>0日付与は日次換算不能のため統計・線から除外</span>
       </div>
     </section>
 
@@ -88,12 +138,14 @@
               <tr>
                 <th>日付</th>
                 <th>日数</th>
+                <th>売りpt</th>
                 <th>円換算合計</th>
                 <th>1日あたり</th>
+                <th>前回比</th>
               </tr>
             </thead>
             <tbody id="recentBody">
-              <tr><td colspan="4" class="loading-cell">読み込み中…</td></tr>
+              <tr><td colspan="6" class="loading-cell">読み込み中…</td></tr>
             </tbody>
           </table>
         </div>
@@ -106,11 +158,11 @@
           <div>1日あたり</div>
           <strong>売りスワップ円換算後 ÷ 付与日数</strong>
         </div>
-        <p>ヒロセ通商の各取引日ページに掲載される USD/TRY の「売り（円換算後）」を直接取得。木曜の3日分付与などは付与日数で割って比較可能にしています。</p>
+        <p>ヒロセ通商の各取引日ページに掲載される USD/TRY の「売り（円換算後）」を直接取得。複数日付与も日割りするため、日ごとの水準を同じ基準で比較できます。</p>
         <dl class="method-list">
-          <div><dt>開始</dt><dd>2026/07/01</dd></div>
+          <div><dt>開始</dt><dd id="methodStart">2026/07/01</dd></div>
           <div><dt>基準Lot</dt><dd>1,000 USD</dd></div>
-          <div><dt>更新</dt><dd>GitHub Actions / 毎営業日</dd></div>
+          <div><dt>更新</dt><dd>毎日 10:30 JST</dd></div>
           <div><dt>対象</dt><dd>USD/TRY 売り</dd></div>
         </dl>
         <a class="repo-link" href="https://github.com/ProtChan/USDTRY" target="_blank" rel="noreferrer">GitHub repository ↗</a>
