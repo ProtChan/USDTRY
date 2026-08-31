@@ -9,9 +9,9 @@
     "source_page": "https://hirose-fx.co.jp/contents/news/Swap",
     "source_csv": "https://hirose-fx.co.jp/swap/lionfx_swap.csv",
     "normalization": "sell_yen / days when days > 0; 0-day rows are kept with sell_yen_per_day=null",
-    "generated_at": "2026-08-31T06:10:17+00:00",
+    "generated_at": "2026-08-31T06:10:53+00:00",
     "records": 43,
-    "pages_fetched_this_run": 43
+    "pages_fetched_this_run": 1
   },
   "data": [
     {
