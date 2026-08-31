@@ -14,7 +14,7 @@
     "normalization": "swap=sell_yen/days; DAILY FX cost is divided by Hirose accrual days; 7AVG is a 7-calendar-day deterioration rate normalized directly to one day",
     "fx_cost_sign": "positive=FX loss/cost for USDTRY short, negative=FX gain",
     "records": 43,
-    "generated_at": "2026-08-31T13:41:03+00:00",
+    "generated_at": "2026-08-31T13:41:32+00:00",
     "pages_fetched_this_run": 1,
     "market_rate_history_start": "2026-06-15",
     "market_day_boundary": "17:00 America/New_York (06:00 JST during US DST, 07:00 JST during US standard time)"
