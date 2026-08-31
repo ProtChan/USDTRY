@@ -80,6 +80,18 @@ canvas {
     flex-wrap: wrap;
     justify-content: flex-end;
   }
+
+  /* Keep the lower cards on the exact same content width as the cards above. */
+  .lower-grid {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+  }
+
+  .table-panel,
+  .method-panel {
+    justify-self: stretch;
+    box-sizing: border-box;
+  }
 }
 
 @media (max-width: 620px) {
@@ -165,14 +177,66 @@ canvas {
     max-width: 100%;
   }
 
+  /* Recent data and Method now use exactly the same outer width as upper cards. */
+  .lower-grid,
+  .table-panel,
+  .method-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .table-panel,
+  .method-panel {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  /* Do not let the recent-data table create a 700px intrinsic mobile width. */
   .table-scroll {
     margin-left: 0;
     margin-right: 0;
+    overflow-x: hidden;
   }
 
   table {
-    width: 700px;
-    max-width: none;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    table-layout: fixed;
+  }
+
+  /* Mobile summary: date / days / daily swap / change. Less important raw fields stay on desktop. */
+  table th:nth-child(3),
+  table td:nth-child(3),
+  table th:nth-child(4),
+  table td:nth-child(4) {
+    display: none;
+  }
+
+  table th,
+  table td {
+    padding-left: 5px;
+    padding-right: 5px;
+    white-space: nowrap;
+  }
+
+  table th:nth-child(1),
+  table td:nth-child(1) { width: 31%; }
+  table th:nth-child(2),
+  table td:nth-child(2) { width: 14%; }
+  table th:nth-child(5),
+  table td:nth-child(5) { width: 34%; }
+  table th:nth-child(6),
+  table td:nth-child(6) { width: 21%; }
+
+  .method-panel p,
+  .method-list dd,
+  .formula strong {
+    overflow-wrap: anywhere;
+  }
+
+  .method-list div {
+    min-width: 0;
   }
 
   .hero-value,
@@ -207,4 +271,17 @@ canvas {
   .download-btn {
     width: 100%;
   }
+
+  /* On very narrow screens, keep the table as a compact 3-column card. */
+  table th:nth-child(6),
+  table td:nth-child(6) {
+    display: none;
+  }
+
+  table th:nth-child(1),
+  table td:nth-child(1) { width: 38%; }
+  table th:nth-child(2),
+  table td:nth-child(2) { width: 17%; }
+  table th:nth-child(5),
+  table td:nth-child(5) { width: 45%; }
 }
