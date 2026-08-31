@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark" />
   <meta name="theme-color" content="#07111f" />
   <title>USD/TRY Swap Watch</title>
-  <meta name="description" content="ヒロセ通商 LION FX の USD/TRY 売りスワップと7日平均為替差損を円換算・1日あたりで可視化" />
+  <meta name="description" content="ヒロセ通商 LION FX の USD/TRY 売りスワップと前回代表レート差による為替差損を円換算・1日あたりで可視化" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./mobile-fix.css" />
@@ -20,7 +20,7 @@
       <div class="brand-block">
         <div class="eyebrow"><span class="pulse"></span> HIROSE · LION FX</div>
         <h1>USD/TRY <span>Swap Watch</span></h1>
-        <p class="lead">売りスワップとUSD/TRY売りの<strong>7日平均為替差損</strong>を円建て・1日あたりで比較。為替は日中高安ではなく、1時間足終値の中央値を代表レートにしています。</p>
+        <p class="lead">売りスワップとUSD/TRY売りの<strong>前回代表レートとの差による為替差損</strong>を円建て・1日あたりで比較。為替は日中高安ではなく、1時間足終値の中央値を代表レートにしています。</p>
       </div>
       <div class="header-side">
         <div class="status-pill" id="statusPill">データ読込中</div>
@@ -67,7 +67,7 @@
         <div>
           <div class="section-kicker">DAILY JPY / USDTRY SHORT</div>
           <h2>スワップと為替差損 / 日</h2>
-          <p class="panel-sub">為替差損は直近7日間のUSD/TRY悪化率を7で割って日次化。損失をプラス、改善時はマイナスで表示します。</p>
+          <p class="panel-sub">為替差損は当日の安定代表レートと直前取得日の安定代表レートとの差から算出。損失をプラス、改善時はマイナスで表示します。</p>
         </div>
         <div class="chart-actions">
           <div class="range-switch" role="group" aria-label="表示期間">
@@ -82,10 +82,10 @@
       <div class="chart-legend">
         <span><i class="legend-dot actual"></i>スワップ / 日</span>
         <span id="maLegend"><i class="legend-line"></i>7回移動平均</span>
-        <span><i class="legend-fx"></i>7日平均 為替差損 / 日</span>
+        <span><i class="legend-fx"></i>為替差損 / 日</span>
         <span><i class="legend-triple"></i>複数日付与</span>
       </div>
-      <div class="chart-wrap"><canvas id="swapChart" aria-label="USDTRY swap and rolling FX loss chart"></canvas></div>
+      <div class="chart-wrap"><canvas id="swapChart" aria-label="USDTRY swap and previous-day FX cost chart"></canvas></div>
       <div class="chart-foot">
         <span id="rangeLabel">2026/07/01 —</span>
         <span>代表レート = UTC日付ごとの1時間足終値中央値</span>
@@ -110,13 +110,13 @@
         <div class="section-kicker">METHOD</div>
         <h2>計算方法</h2>
         <div class="formula"><div>スワップ / 日</div><strong>売りスワップ円換算後 ÷ 付与日数</strong></div>
-        <div class="formula fx-formula"><div>7日平均 為替差損 / 日</div><strong>(USD/TRY 7日変化率 ÷ 7) × USD数量 × USD/JPY</strong></div>
-        <p>USD/TRY・USD/JPYはYahoo Financeの1時間足から、UTC日付ごとの<strong>終値中央値</strong>を代表値として使用。USD/TRYが7日間で上昇した割合を「悪化率」とし、7で割った平均日次悪化率をUSD建て元本とUSD/JPYで円換算します。損失はプラス表示、改善はマイナス表示です。複数日付与では差損合計を付与日数分として扱うため、日次値は同じ基準で比較できます。</p>
+        <div class="formula fx-formula"><div>為替差損 / 日</div><strong>USD数量 × (当日代表USD/TRY − 直前代表USD/TRY) × TRY/JPY ÷ 付与日数</strong></div>
+        <p>USD/TRY・USD/JPYはYahoo Financeの1時間足から、UTC日付ごとの<strong>終値中央値</strong>を代表値として使用します。日中の高値・安値は使いません。USD/TRYが直前取得日より上昇した分をUSD/TRY売りの差損として円換算し、損失はプラス表示、改善はマイナス表示に統一します。複数日付与では差損合計も同じ付与日数で割り、1日あたりで比較します。</p>
         <dl class="method-list">
           <div><dt>開始</dt><dd id="methodStart">2026/07/01</dd></div>
           <div><dt>基準Lot</dt><dd>1,000 USD</dd></div>
           <div><dt>為替代表値</dt><dd>1時間足終値の中央値</dd></div>
-          <div><dt>為替差損</dt><dd>直近7日変化率 ÷ 7</dd></div>
+          <div><dt>為替差損</dt><dd>直前取得日との差</dd></div>
           <div><dt>更新</dt><dd>毎日 10:30 JST</dd></div>
         </dl>
         <a class="repo-link" href="https://github.com/ProtChan/USDTRY" target="_blank" rel="noreferrer">GitHub repository ↗</a>
