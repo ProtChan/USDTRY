@@ -4,16 +4,55 @@
     "comparison": "Thursday fixed USDTRY to Friday fixed USDTRY on Hirose rows with Thursday and days>=3",
     "fx_loss_jpy_10k": "10000 * (Fri USDTRY fixed - Thu USDTRY fixed) * (Fri fixed USDJPY / Fri fixed USDTRY)",
     "swap_jpy_10k": "Hirose sell_yen * 10",
-    "note": "Positive FX loss means USDTRY rose, adverse for a short. Early-morning 05:00-08:59 bars are excluded from fixed rates."
+    "note": "Positive FX loss means USDTRY rose, adverse for a short. 05:00-08:59 JST bars are excluded from fixed rates."
   },
   "summary": {
     "weeks": 9,
     "avg_swap_jpy_10k": 3304.09,
-    "avg_fx_loss_jpy_10k": 3431.25,
-    "avg_swap_minus_fx_jpy_10k": -127.16,
-    "median_swap_minus_fx_jpy_10k": -188.4,
-    "weeks_fx_loss_exceeded_swap": 6,
-    "weeks_net_positive": 3
+    "avg_fx_loss_jpy_10k": 3409.11,
+    "avg_swap_minus_fx_jpy_10k": -105.02,
+    "median_swap_minus_fx_jpy_10k": -24.85,
+    "weeks_fx_loss_exceeded_swap": 5,
+    "weeks_net_positive": 4,
+    "mean_early_05_09_vs_fixed_pct": -0.059796,
+    "median_early_05_09_vs_fixed_pct": -0.034602
+  },
+  "weekday_transition_stats": {
+    "Wed->Thu": {
+      "n": 9,
+      "mean_change_pct": 0.035863,
+      "median_change_pct": 0.036541,
+      "min_change_pct": 0.024668,
+      "max_change_pct": 0.045864
+    },
+    "Thu->Fri": {
+      "n": 9,
+      "mean_change_pct": 0.212867,
+      "median_change_pct": 0.224151,
+      "min_change_pct": 0.185595,
+      "max_change_pct": 0.232433
+    },
+    "Fri->Sat": {
+      "n": 9,
+      "mean_change_pct": 0.025556,
+      "median_change_pct": 0.019449,
+      "min_change_pct": 0.000104,
+      "max_change_pct": 0.071719
+    },
+    "Mon->Tue": {
+      "n": 9,
+      "mean_change_pct": 0.030783,
+      "median_change_pct": 0.034197,
+      "min_change_pct": -0.014506,
+      "max_change_pct": 0.068091
+    },
+    "Tue->Wed": {
+      "n": 8,
+      "mean_change_pct": 0.03844,
+      "median_change_pct": 0.041709,
+      "min_change_pct": -0.000641,
+      "max_change_pct": 0.060066
+    }
   },
   "weeks": [
     {
@@ -58,17 +97,17 @@
       "swap_days": 3,
       "swap_jpy_10k": 3019.4,
       "thu_fixed_usdtry": 47.03849983,
-      "fri_fixed_usdtry": 47.13160133,
-      "thu_to_fri_delta_usdtry": 0.0931015,
-      "thu_to_fri_change_pct": 0.197926,
-      "fri_fixed_usdjpy": 162.39150238,
-      "fx_loss_jpy_10k": 3207.8,
-      "swap_minus_fx_jpy_10k": -188.4,
-      "fx_loss_as_pct_of_swap": 106.24,
+      "fri_fixed_usdtry": 47.12580109,
+      "thu_to_fri_delta_usdtry": 0.08730125,
+      "thu_to_fri_change_pct": 0.185595,
+      "fri_fixed_usdjpy": 162.40400696,
+      "fx_loss_jpy_10k": 3008.56,
+      "swap_minus_fx_jpy_10k": 10.84,
+      "fx_loss_as_pct_of_swap": 99.64,
       "thu_early_05_09_median": 47.033199310302734,
       "fri_early_05_09_median": 47.087785720825195,
       "thu_included_samples": 20,
-      "fri_included_samples": 20
+      "fri_included_samples": 17
     },
     {
       "thursday": "2026-07-23",
