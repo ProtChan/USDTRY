@@ -113,10 +113,11 @@
         <div class="formula"><div>スワップ / 日</div><strong>売りスワップ円換算後 ÷ 付与日数</strong></div>
         <div class="formula fx-formula"><div>FX 7AVG</div><strong>(当日代表USD/TRY ÷ 7日前代表USD/TRY − 1) ÷ 7 × USD数量 × USD/JPY</strong></div>
         <div class="formula fx-formula"><div>FX DAILY</div><strong>USD数量 × (当日代表USD/TRY − 直前代表USD/TRY) × TRY/JPY ÷ 付与日数</strong></div>
-        <p>USD/TRY・USD/JPYは1時間足から、<strong>NY 17:00を境界にした取引日</strong>ごとの終値中央値を代表値として使用します。これは米国夏時間では日本時間6時、標準時間では7時のロールオーバーに自動追従します。日中高値・安値は使いません。デフォルトのFX 7AVGは、7日前からのUSD/TRY悪化率を7で割って円換算するため、複数日付与による日次ノイズを受けにくい表示です。</p>
+        <p>USD/TRY・USD/JPYは1時間足から、<strong>NY 17:00を境界にした取引日</strong>ごとの終値中央値を代表値として使用します。これは米国夏時間では日本時間6時、標準時間では7時のロールオーバーに自動追従します。日中高値・安値は使いません。デフォルトのFX 7AVGは、7日前からのUSD/TRY悪化率を7で割って円換算するため、複数日付与による日次ノイズを受けにくい表示です。7/1から値を出すため、為替レート自体は6月中旬まで遡って取得しています。</p>
         <dl class="method-list">
           <div><dt>開始</dt><dd id="methodStart">2026/07/01</dd></div>
           <div><dt>基準Lot</dt><dd>1,000 USD</dd></div>
+          <div><dt>為替履歴</dt><dd>2026/06中旬〜</dd></div>
           <div><dt>為替代表値</dt><dd>NYクローズ取引日中央値</dd></div>
           <div><dt>デフォルトFX</dt><dd>7日悪化率 ÷ 7</dd></div>
           <div><dt>更新</dt><dd>毎日 10:30 JST</dd></div>
@@ -129,7 +130,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="./app.js?v=20260831-nyclose2"></script>
-  <script src="./chart-enhancements.js?v=20260831-nyclose2"></script>
+  <script src="./app.js?v=20260831-prehistory1"></script>
+  <script src="./chart-enhancements.js?v=20260831-prehistory1"></script>
 </body>
 </html>
