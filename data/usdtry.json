@@ -2,7 +2,7 @@
   "meta": {
     "pair": "USD/TRY",
     "side": "sell",
-    "description": "Hirose LION FX USD/TRY sell swap plus representative-rate FX P/L, JPY normalized per accrual day",
+    "description": "Hirose LION FX USD/TRY sell swap plus rolling 7-day representative-rate FX deterioration cost",
     "start_date": "2026-07-01",
     "latest_date": "2026-08-28",
     "lot_size": 1000,
@@ -10,10 +10,11 @@
     "source_csv": "https://hirose-fx.co.jp/swap/lionfx_swap.csv",
     "market_rate_source": "Yahoo Finance chart API: USDTRY=X and USDJPY=X",
     "market_rate_method": "UTC calendar-day median of 1-hour closing prices; daily high/low are not used",
-    "normalization": "swap=sell_yen/days; fx_pnl=short USDTRY representative-rate change converted via representative TRYJPY, then divided by days; 0-day rows are null",
-    "fx_pnl_sign": "negative=FX loss for USDTRY short, positive=FX gain",
+    "fx_cost_method": "(USDTRY representative rate / representative rate about 7 calendar days earlier - 1) / 7 * lot_USD * representative USDJPY",
+    "normalization": "swap=sell_yen/days; FX deterioration uses rolling 7-calendar-day percentage change divided by 7; multi-day accrual total=fx_cost_per_day*days",
+    "fx_cost_sign": "positive=FX loss/cost for USDTRY short, negative=FX gain",
     "records": 43,
-    "generated_at": "2026-08-31T12:34:55+00:00",
+    "generated_at": "2026-08-31T12:48:12+00:00",
     "pages_fetched_this_run": 1
   },
   "data": [
@@ -32,9 +33,14 @@
       "tryjpy_rep_rate": 3.48608509,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": null,
-      "fx_pnl_jpy_total": null,
-      "fx_pnl_jpy_per_day": null
+      "usdtry_rate_date": "2026-07-01",
+      "usdjpy_rate_date": "2026-07-01",
+      "usdtry_7d_ref_date": "2026-06-24",
+      "usdtry_7d_ref_rate": 46.49180031,
+      "usdtry_7d_change_pct": 0.36565194,
+      "usdtry_daily_change_pct": 0.05223599,
+      "fx_cost_jpy_per_day": 84.97072,
+      "fx_cost_jpy_accrual_total": 84.97072
     },
     {
       "date": "2026-07-02",
@@ -51,9 +57,14 @@
       "tryjpy_rep_rate": 3.45321315,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.02805137,
-      "fx_pnl_jpy_total": -96.86736,
-      "fx_pnl_jpy_per_day": -32.28912
+      "usdtry_rate_date": "2026-07-02",
+      "usdjpy_rate_date": "2026-07-02",
+      "usdtry_7d_ref_date": "2026-06-25",
+      "usdtry_7d_ref_rate": 46.50959969,
+      "usdtry_7d_change_pct": 0.38755474,
+      "usdtry_daily_change_pct": 0.05536496,
+      "fx_cost_jpy_per_day": 89.264932,
+      "fx_cost_jpy_accrual_total": 267.794797
     },
     {
       "date": "2026-07-03",
@@ -70,9 +81,14 @@
       "tryjpy_rep_rate": 3.44379834,
       "usdtry_rate_samples": 22,
       "usdjpy_rate_samples": 21,
-      "usdtry_change": 0.10935021,
-      "fx_pnl_jpy_total": -376.580072,
-      "fx_pnl_jpy_per_day": -376.580072
+      "usdtry_rate_date": "2026-07-03",
+      "usdjpy_rate_date": "2026-07-03",
+      "usdtry_7d_ref_date": "2026-06-26",
+      "usdtry_7d_ref_rate": 46.61400986,
+      "usdtry_7d_change_pct": 0.39728442,
+      "usdtry_daily_change_pct": 0.05675492,
+      "fx_cost_jpy_per_day": 91.470202,
+      "fx_cost_jpy_accrual_total": 91.470202
     },
     {
       "date": "2026-07-06",
@@ -89,9 +105,14 @@
       "tryjpy_rep_rate": 3.46318487,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01449966,
-      "fx_pnl_jpy_total": -50.215003,
-      "fx_pnl_jpy_per_day": -50.215003
+      "usdtry_rate_date": "2026-07-06",
+      "usdjpy_rate_date": "2026-07-06",
+      "usdtry_7d_ref_date": "2026-06-29",
+      "usdtry_7d_ref_rate": 46.63484955,
+      "usdtry_7d_change_pct": 0.38351184,
+      "usdtry_daily_change_pct": 0.05478741,
+      "fx_cost_jpy_per_day": 88.823806,
+      "fx_cost_jpy_accrual_total": 88.823806
     },
     {
       "date": "2026-07-07",
@@ -108,9 +129,14 @@
       "tryjpy_rep_rate": 3.45739933,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01889992,
-      "fx_pnl_jpy_total": -65.344571,
-      "fx_pnl_jpy_per_day": -65.344571
+      "usdtry_rate_date": "2026-07-07",
+      "usdjpy_rate_date": "2026-07-07",
+      "usdtry_7d_ref_date": "2026-06-30",
+      "usdtry_7d_ref_rate": 46.65040016,
+      "usdtry_7d_change_pct": 0.3905636,
+      "usdtry_daily_change_pct": 0.0557948,
+      "fx_cost_jpy_per_day": 90.34238,
+      "fx_cost_jpy_accrual_total": 90.34238
     },
     {
       "date": "2026-07-08",
@@ -127,9 +153,14 @@
       "tryjpy_rep_rate": 3.46809563,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01775169,
-      "fx_pnl_jpy_total": -61.564559,
-      "fx_pnl_jpy_per_day": -61.564559
+      "usdtry_rate_date": "2026-07-08",
+      "usdjpy_rate_date": "2026-07-08",
+      "usdtry_7d_ref_date": "2026-07-01",
+      "usdtry_7d_ref_rate": 46.66179848,
+      "usdtry_7d_change_pct": 0.40408397,
+      "usdtry_daily_change_pct": 0.05772628,
+      "fx_cost_jpy_per_day": 93.794528,
+      "fx_cost_jpy_accrual_total": 93.794528
     },
     {
       "date": "2026-07-09",
@@ -146,9 +177,14 @@
       "tryjpy_rep_rate": 3.46425169,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01979828,
-      "fx_pnl_jpy_total": -68.586225,
-      "fx_pnl_jpy_per_day": -22.862075
+      "usdtry_rate_date": "2026-07-09",
+      "usdjpy_rate_date": "2026-07-09",
+      "usdtry_7d_ref_date": "2026-07-02",
+      "usdtry_7d_ref_rate": 46.68984985,
+      "usdtry_7d_change_pct": 0.38616479,
+      "usdtry_daily_change_pct": 0.0551664,
+      "fx_cost_jpy_per_day": 89.573678,
+      "fx_cost_jpy_accrual_total": 268.721035
     },
     {
       "date": "2026-07-10",
@@ -165,9 +201,14 @@
       "tryjpy_rep_rate": 3.44165791,
       "usdtry_rate_samples": 22,
       "usdjpy_rate_samples": 21,
-      "usdtry_change": 0.10750008,
-      "fx_pnl_jpy_total": -369.978501,
-      "fx_pnl_jpy_per_day": -369.978501
+      "usdtry_rate_date": "2026-07-10",
+      "usdjpy_rate_date": "2026-07-10",
+      "usdtry_7d_ref_date": "2026-07-03",
+      "usdtry_7d_ref_rate": 46.79920006,
+      "usdtry_7d_change_pct": 0.38130915,
+      "usdtry_daily_change_pct": 0.05447274,
+      "fx_cost_jpy_per_day": 88.072063,
+      "fx_cost_jpy_accrual_total": 88.072063
     },
     {
       "date": "2026-07-13",
@@ -184,9 +225,14 @@
       "tryjpy_rep_rate": 3.45203303,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01770019,
-      "fx_pnl_jpy_total": -61.101641,
-      "fx_pnl_jpy_per_day": -30.55082
+      "usdtry_rate_date": "2026-07-13",
+      "usdjpy_rate_date": "2026-07-13",
+      "usdtry_7d_ref_date": "2026-07-06",
+      "usdtry_7d_ref_rate": 46.81369972,
+      "usdtry_7d_change_pct": 0.38802778,
+      "usdtry_daily_change_pct": 0.05543254,
+      "fx_cost_jpy_per_day": 89.927932,
+      "fx_cost_jpy_accrual_total": 179.855865
     },
     {
       "date": "2026-07-14",
@@ -203,9 +249,14 @@
       "tryjpy_rep_rate": 3.44926349,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.03440094,
-      "fx_pnl_jpy_total": -118.657906,
-      "fx_pnl_jpy_per_day": null
+      "usdtry_rate_date": "2026-07-14",
+      "usdjpy_rate_date": "2026-07-14",
+      "usdtry_7d_ref_date": "2026-07-07",
+      "usdtry_7d_ref_rate": 46.83259964,
+      "usdtry_7d_change_pct": 0.42096997,
+      "usdtry_daily_change_pct": 0.06013857,
+      "fx_cost_jpy_per_day": 97.555582,
+      "fx_cost_jpy_accrual_total": 0.0
     },
     {
       "date": "2026-07-15",
@@ -222,9 +273,14 @@
       "tryjpy_rep_rate": 3.44823744,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": -0.00355148,
-      "fx_pnl_jpy_total": 12.246346,
-      "fx_pnl_jpy_per_day": 12.246346
+      "usdtry_rate_date": "2026-07-15",
+      "usdjpy_rate_date": "2026-07-15",
+      "usdtry_7d_ref_date": "2026-07-08",
+      "usdtry_7d_ref_rate": 46.85035133,
+      "usdtry_7d_change_pct": 0.37533979,
+      "usdtry_daily_change_pct": 0.05361997,
+      "fx_cost_jpy_per_day": 86.948803,
+      "fx_cost_jpy_accrual_total": 86.948803
     },
     {
       "date": "2026-07-16",
@@ -241,9 +297,14 @@
       "tryjpy_rep_rate": 3.44806244,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.02384949,
-      "fx_pnl_jpy_total": -82.234531,
-      "fx_pnl_jpy_per_day": -27.41151
+      "usdtry_rate_date": "2026-07-16",
+      "usdjpy_rate_date": "2026-07-16",
+      "usdtry_7d_ref_date": "2026-07-09",
+      "usdtry_7d_ref_rate": 46.87014961,
+      "usdtry_7d_change_pct": 0.38382472,
+      "usdtry_daily_change_pct": 0.0548321,
+      "fx_cost_jpy_per_day": 88.954946,
+      "fx_cost_jpy_accrual_total": 266.864839
     },
     {
       "date": "2026-07-17",
@@ -260,9 +321,14 @@
       "tryjpy_rep_rate": 3.44440062,
       "usdtry_rate_samples": 19,
       "usdjpy_rate_samples": 18,
-      "usdtry_change": 0.10010147,
-      "fx_pnl_jpy_total": -344.789565,
-      "fx_pnl_jpy_per_day": -344.789565
+      "usdtry_rate_date": "2026-07-17",
+      "usdjpy_rate_date": "2026-07-17",
+      "usdtry_7d_ref_date": "2026-07-10",
+      "usdtry_7d_ref_rate": 46.97764969,
+      "usdtry_7d_change_pct": 0.36719719,
+      "usdtry_daily_change_pct": 0.05245674,
+      "fx_cost_jpy_per_day": 85.19185,
+      "fx_cost_jpy_accrual_total": 85.19185
     },
     {
       "date": "2026-07-20",
@@ -279,9 +345,14 @@
       "tryjpy_rep_rate": 3.4427008,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.02414894,
-      "fx_pnl_jpy_total": -83.137575,
-      "fx_pnl_jpy_per_day": -83.137575
+      "usdtry_rate_date": "2026-07-20",
+      "usdjpy_rate_date": "2026-07-20",
+      "usdtry_7d_ref_date": "2026-07-13",
+      "usdtry_7d_ref_rate": 46.99534988,
+      "usdtry_7d_change_pct": 0.38078099,
+      "usdtry_daily_change_pct": 0.05439728,
+      "fx_cost_jpy_per_day": 88.344997,
+      "fx_cost_jpy_accrual_total": 88.344997
     },
     {
       "date": "2026-07-21",
@@ -298,9 +369,14 @@
       "tryjpy_rep_rate": 3.44808084,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01774979,
-      "fx_pnl_jpy_total": -61.202711,
-      "fx_pnl_jpy_per_day": -61.202711
+      "usdtry_rate_date": "2026-07-21",
+      "usdjpy_rate_date": "2026-07-21",
+      "usdtry_7d_ref_date": "2026-07-14",
+      "usdtry_7d_ref_rate": 47.02975082,
+      "usdtry_7d_change_pct": 0.3450969,
+      "usdtry_daily_change_pct": 0.04929956,
+      "fx_cost_jpy_per_day": 80.221224,
+      "fx_cost_jpy_accrual_total": 80.221224
     },
     {
       "date": "2026-07-22",
@@ -317,9 +393,14 @@
       "tryjpy_rep_rate": 3.45505088,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01593971,
-      "fx_pnl_jpy_total": -55.072509,
-      "fx_pnl_jpy_per_day": -55.072509
+      "usdtry_rate_date": "2026-07-22",
+      "usdjpy_rate_date": "2026-07-22",
+      "usdtry_7d_ref_date": "2026-07-15",
+      "usdtry_7d_ref_rate": 47.02619934,
+      "usdtry_7d_change_pct": 0.38657047,
+      "usdtry_daily_change_pct": 0.05522435,
+      "fx_cost_jpy_per_day": 90.074235,
+      "fx_cost_jpy_accrual_total": 90.074235
     },
     {
       "date": "2026-07-23",
@@ -336,9 +417,14 @@
       "tryjpy_rep_rate": 3.46338619,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.02151108,
-      "fx_pnl_jpy_total": -74.501177,
-      "fx_pnl_jpy_per_day": -24.833726
+      "usdtry_rate_date": "2026-07-23",
+      "usdjpy_rate_date": "2026-07-23",
+      "usdtry_7d_ref_date": "2026-07-16",
+      "usdtry_7d_ref_rate": 47.05004883,
+      "usdtry_7d_change_pct": 0.38140447,
+      "usdtry_daily_change_pct": 0.05448635,
+      "fx_cost_jpy_per_day": 89.125506,
+      "fx_cost_jpy_accrual_total": 267.376517
     },
     {
       "date": "2026-07-24",
@@ -355,9 +441,14 @@
       "tryjpy_rep_rate": 3.45987721,
       "usdtry_rate_samples": 22,
       "usdjpy_rate_samples": 21,
-      "usdtry_change": 0.10975074,
-      "fx_pnl_jpy_total": -379.724084,
-      "fx_pnl_jpy_per_day": -379.724084
+      "usdtry_rate_date": "2026-07-24",
+      "usdjpy_rate_date": "2026-07-24",
+      "usdtry_7d_ref_date": "2026-07-17",
+      "usdtry_7d_ref_rate": 47.1501503,
+      "usdtry_7d_change_pct": 0.40105972,
+      "usdtry_daily_change_pct": 0.05729425,
+      "fx_cost_jpy_per_day": 93.841096,
+      "fx_cost_jpy_accrual_total": 93.841096
     },
     {
       "date": "2026-07-27",
@@ -374,9 +465,14 @@
       "tryjpy_rep_rate": 3.45610871,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01009942,
-      "fx_pnl_jpy_total": -34.904693,
-      "fx_pnl_jpy_per_day": -34.904693
+      "usdtry_rate_date": "2026-07-27",
+      "usdjpy_rate_date": "2026-07-27",
+      "usdtry_7d_ref_date": "2026-07-20",
+      "usdtry_7d_ref_rate": 47.17429924,
+      "usdtry_7d_change_pct": 0.37107226,
+      "usdtry_daily_change_pct": 0.05301032,
+      "fx_cost_jpy_per_day": 86.748479,
+      "fx_cost_jpy_accrual_total": 86.748479
     },
     {
       "date": "2026-07-28",
@@ -393,9 +489,14 @@
       "tryjpy_rep_rate": 3.45798262,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.02090072,
-      "fx_pnl_jpy_total": -72.274327,
-      "fx_pnl_jpy_per_day": -72.274327
+      "usdtry_rate_date": "2026-07-28",
+      "usdjpy_rate_date": "2026-07-28",
+      "usdtry_7d_ref_date": "2026-07-21",
+      "usdtry_7d_ref_rate": 47.19204903,
+      "usdtry_7d_change_pct": 0.37760952,
+      "usdtry_daily_change_pct": 0.05394422,
+      "fx_cost_jpy_per_day": 88.363597,
+      "fx_cost_jpy_accrual_total": 88.363597
     },
     {
       "date": "2026-07-29",
@@ -412,9 +513,14 @@
       "tryjpy_rep_rate": 3.45269433,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.0224495,
-      "fx_pnl_jpy_total": -77.511261,
-      "fx_pnl_jpy_per_day": -77.511261
+      "usdtry_rate_date": "2026-07-29",
+      "usdjpy_rate_date": "2026-07-29",
+      "usdtry_7d_ref_date": "2026-07-22",
+      "usdtry_7d_ref_rate": 47.20798874,
+      "usdtry_7d_change_pct": 0.39127162,
+      "usdtry_daily_change_pct": 0.05589595,
+      "fx_cost_jpy_per_day": 91.463936,
+      "fx_cost_jpy_accrual_total": 91.463936
     },
     {
       "date": "2026-07-30",
@@ -431,9 +537,14 @@
       "tryjpy_rep_rate": 3.43494321,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01739883,
-      "fx_pnl_jpy_total": -59.763993,
-      "fx_pnl_jpy_per_day": -19.921331
+      "usdtry_rate_date": "2026-07-30",
+      "usdjpy_rate_date": "2026-07-30",
+      "usdtry_7d_ref_date": "2026-07-23",
+      "usdtry_7d_ref_rate": 47.22949982,
+      "usdtry_7d_change_pct": 0.38238645,
+      "usdtry_daily_change_pct": 0.05462664,
+      "fx_cost_jpy_per_day": 88.960023,
+      "fx_cost_jpy_accrual_total": 266.880068
     },
     {
       "date": "2026-07-31",
@@ -450,9 +561,14 @@
       "tryjpy_rep_rate": 3.36687868,
       "usdtry_rate_samples": 21,
       "usdjpy_rate_samples": 22,
-      "usdtry_change": 0.10779953,
-      "fx_pnl_jpy_total": -362.947939,
-      "fx_pnl_jpy_per_day": -362.947939
+      "usdtry_rate_date": "2026-07-31",
+      "usdjpy_rate_date": "2026-07-31",
+      "usdtry_7d_ref_date": "2026-07-24",
+      "usdtry_7d_ref_rate": 47.33925056,
+      "usdtry_7d_change_pct": 0.37737818,
+      "usdtry_daily_change_pct": 0.05391117,
+      "fx_cost_jpy_per_day": 86.25086,
+      "fx_cost_jpy_accrual_total": 86.25086
     },
     {
       "date": "2026-08-03",
@@ -469,9 +585,14 @@
       "tryjpy_rep_rate": 3.29895901,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01255035,
-      "fx_pnl_jpy_total": -41.40309,
-      "fx_pnl_jpy_per_day": -41.40309
+      "usdtry_rate_date": "2026-08-03",
+      "usdjpy_rate_date": "2026-08-03",
+      "usdtry_7d_ref_date": "2026-07-27",
+      "usdtry_7d_ref_rate": 47.34934998,
+      "usdtry_7d_change_pct": 0.38247395,
+      "usdtry_daily_change_pct": 0.05463914,
+      "fx_cost_jpy_per_day": 85.674713,
+      "fx_cost_jpy_accrual_total": 85.674713
     },
     {
       "date": "2026-08-04",
@@ -488,9 +609,14 @@
       "tryjpy_rep_rate": 3.31604354,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01491547,
-      "fx_pnl_jpy_total": -49.460348,
-      "fx_pnl_jpy_per_day": -49.460348
+      "usdtry_rate_date": "2026-08-04",
+      "usdjpy_rate_date": "2026-08-04",
+      "usdtry_7d_ref_date": "2026-07-28",
+      "usdtry_7d_ref_rate": 47.3702507,
+      "usdtry_7d_change_pct": 0.36967016,
+      "usdtry_daily_change_pct": 0.05281002,
+      "fx_cost_jpy_per_day": 83.261601,
+      "fx_cost_jpy_accrual_total": 83.261601
     },
     {
       "date": "2026-08-05",
@@ -507,9 +633,14 @@
       "tryjpy_rep_rate": 3.31439504,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.02138519,
-      "fx_pnl_jpy_total": -70.878968,
-      "fx_pnl_jpy_per_day": -70.878968
+      "usdtry_rate_date": "2026-08-05",
+      "usdjpy_rate_date": "2026-08-05",
+      "usdtry_7d_ref_date": "2026-07-29",
+      "usdtry_7d_ref_rate": 47.3927002,
+      "usdtry_7d_change_pct": 0.36724932,
+      "usdtry_daily_change_pct": 0.05246419,
+      "fx_cost_jpy_per_day": 82.712416,
+      "fx_cost_jpy_accrual_total": 82.712416
     },
     {
       "date": "2026-08-06",
@@ -526,9 +657,14 @@
       "tryjpy_rep_rate": 3.31725497,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.02305031,
-      "fx_pnl_jpy_total": -76.463755,
-      "fx_pnl_jpy_per_day": -25.487918
+      "usdtry_rate_date": "2026-08-06",
+      "usdjpy_rate_date": "2026-08-06",
+      "usdtry_7d_ref_date": "2026-07-30",
+      "usdtry_7d_ref_rate": 47.41009903,
+      "usdtry_7d_change_pct": 0.37903496,
+      "usdtry_daily_change_pct": 0.05414785,
+      "fx_cost_jpy_per_day": 85.48186,
+      "fx_cost_jpy_accrual_total": 256.445579
     },
     {
       "date": "2026-08-07",
@@ -545,9 +681,14 @@
       "tryjpy_rep_rate": 3.31937702,
       "usdtry_rate_samples": 22,
       "usdjpy_rate_samples": 21,
-      "usdtry_change": 0.10680008,
-      "fx_pnl_jpy_total": -354.509731,
-      "fx_pnl_jpy_per_day": -354.509731
+      "usdtry_rate_date": "2026-08-07",
+      "usdjpy_rate_date": "2026-08-07",
+      "usdtry_7d_ref_date": "2026-07-31",
+      "usdtry_7d_ref_rate": 47.51789856,
+      "usdtry_7d_change_pct": 0.37607177,
+      "usdtry_daily_change_pct": 0.05372454,
+      "fx_cost_jpy_per_day": 85.058299,
+      "fx_cost_jpy_accrual_total": 85.058299
     },
     {
       "date": "2026-08-10",
@@ -564,9 +705,14 @@
       "tryjpy_rep_rate": 3.32991927,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01311493,
-      "fx_pnl_jpy_total": -43.671658,
-      "fx_pnl_jpy_per_day": -43.671658
+      "usdtry_rate_date": "2026-08-10",
+      "usdjpy_rate_date": "2026-08-10",
+      "usdtry_7d_ref_date": "2026-08-03",
+      "usdtry_7d_ref_rate": 47.53044891,
+      "usdtry_7d_change_pct": 0.37716029,
+      "usdtry_daily_change_pct": 0.05388004,
+      "fx_cost_jpy_per_day": 85.598952,
+      "fx_cost_jpy_accrual_total": 85.598952
     },
     {
       "date": "2026-08-11",
@@ -583,9 +729,14 @@
       "tryjpy_rep_rate": 3.33646171,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.02348518,
-      "fx_pnl_jpy_total": -78.357404,
-      "fx_pnl_jpy_per_day": -78.357404
+      "usdtry_rate_date": "2026-08-11",
+      "usdjpy_rate_date": "2026-08-11",
+      "usdtry_7d_ref_date": "2026-08-04",
+      "usdtry_7d_ref_rate": 47.54536438,
+      "usdtry_7d_change_pct": 0.39506625,
+      "usdtry_daily_change_pct": 0.05643804,
+      "fx_cost_jpy_per_day": 89.883213,
+      "fx_cost_jpy_accrual_total": 89.883213
     },
     {
       "date": "2026-08-12",
@@ -602,9 +753,14 @@
       "tryjpy_rep_rate": 3.3374693,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01914978,
-      "fx_pnl_jpy_total": -63.911803,
-      "fx_pnl_jpy_per_day": -63.911803
+      "usdtry_rate_date": "2026-08-12",
+      "usdjpy_rate_date": "2026-08-12",
+      "usdtry_7d_ref_date": "2026-08-05",
+      "usdtry_7d_ref_rate": 47.56674957,
+      "usdtry_7d_change_pct": 0.39018912,
+      "usdtry_daily_change_pct": 0.0557413,
+      "fx_cost_jpy_per_day": 88.836029,
+      "fx_cost_jpy_accrual_total": 88.836029
     },
     {
       "date": "2026-08-13",
@@ -621,9 +777,14 @@
       "tryjpy_rep_rate": 3.33615935,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01754952,
-      "fx_pnl_jpy_total": -58.547995,
-      "fx_pnl_jpy_per_day": -19.515998
+      "usdtry_rate_date": "2026-08-13",
+      "usdjpy_rate_date": "2026-08-13",
+      "usdtry_7d_ref_date": "2026-08-06",
+      "usdtry_7d_ref_rate": 47.58979988,
+      "usdtry_7d_change_pct": 0.37844137,
+      "usdtry_daily_change_pct": 0.05406305,
+      "fx_cost_jpy_per_day": 86.159204,
+      "fx_cost_jpy_accrual_total": 258.477611
     },
     {
       "date": "2026-08-14",
@@ -640,9 +801,14 @@
       "tryjpy_rep_rate": 3.32653508,
       "usdtry_rate_samples": 22,
       "usdjpy_rate_samples": 22,
-      "usdtry_change": 0.1093502,
-      "fx_pnl_jpy_total": -363.757276,
-      "fx_pnl_jpy_per_day": -363.757276
+      "usdtry_rate_date": "2026-08-14",
+      "usdjpy_rate_date": "2026-08-14",
+      "usdtry_7d_ref_date": "2026-08-07",
+      "usdtry_7d_ref_rate": 47.69659996,
+      "usdtry_7d_change_pct": 0.38294052,
+      "usdtry_daily_change_pct": 0.05470579,
+      "fx_cost_jpy_per_day": 87.131006,
+      "fx_cost_jpy_accrual_total": 87.131006
     },
     {
       "date": "2026-08-17",
@@ -659,9 +825,14 @@
       "tryjpy_rep_rate": 3.324761,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01652527,
-      "fx_pnl_jpy_total": -54.942573,
-      "fx_pnl_jpy_per_day": -54.942573
+      "usdtry_rate_date": "2026-08-17",
+      "usdjpy_rate_date": "2026-08-17",
+      "usdtry_7d_ref_date": "2026-08-10",
+      "usdtry_7d_ref_rate": 47.70971489,
+      "usdtry_7d_change_pct": 0.38998336,
+      "usdtry_daily_change_pct": 0.05571191,
+      "fx_cost_jpy_per_day": 88.71676,
+      "fx_cost_jpy_accrual_total": 88.71676
     },
     {
       "date": "2026-08-18",
@@ -678,9 +849,14 @@
       "tryjpy_rep_rate": 3.33086709,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01877594,
-      "fx_pnl_jpy_total": -62.540161,
-      "fx_pnl_jpy_per_day": -62.540161
+      "usdtry_rate_date": "2026-08-18",
+      "usdjpy_rate_date": "2026-08-18",
+      "usdtry_7d_ref_date": "2026-08-11",
+      "usdtry_7d_ref_rate": 47.73320007,
+      "usdtry_7d_change_pct": 0.37992573,
+      "usdtry_daily_change_pct": 0.0542751,
+      "fx_cost_jpy_per_day": 86.621439,
+      "fx_cost_jpy_accrual_total": 86.621439
     },
     {
       "date": "2026-08-19",
@@ -697,9 +873,14 @@
       "tryjpy_rep_rate": 3.31398609,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.0162487,
-      "fx_pnl_jpy_total": -53.847966,
-      "fx_pnl_jpy_per_day": -53.847966
+      "usdtry_rate_date": "2026-08-19",
+      "usdjpy_rate_date": "2026-08-19",
+      "usdtry_7d_ref_date": "2026-08-12",
+      "usdtry_7d_ref_rate": 47.75234985,
+      "usdtry_7d_change_pct": 0.37369811,
+      "usdtry_daily_change_pct": 0.05338544,
+      "fx_cost_jpy_per_day": 84.798509,
+      "fx_cost_jpy_accrual_total": 84.798509
     },
     {
       "date": "2026-08-20",
@@ -716,9 +897,14 @@
       "tryjpy_rep_rate": 3.30877148,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01630021,
-      "fx_pnl_jpy_total": -53.93367,
-      "fx_pnl_jpy_per_day": -17.97789
+      "usdtry_rate_date": "2026-08-20",
+      "usdjpy_rate_date": "2026-08-20",
+      "usdtry_7d_ref_date": "2026-08-13",
+      "usdtry_7d_ref_rate": 47.76989937,
+      "usdtry_7d_change_pct": 0.37094556,
+      "usdtry_daily_change_pct": 0.05299222,
+      "fx_cost_jpy_per_day": 84.070039,
+      "fx_cost_jpy_accrual_total": 252.210118
     },
     {
       "date": "2026-08-21",
@@ -735,9 +921,14 @@
       "tryjpy_rep_rate": 3.30716928,
       "usdtry_rate_samples": 22,
       "usdjpy_rate_samples": 22,
-      "usdtry_change": 0.10849952,
-      "fx_pnl_jpy_total": -358.826279,
-      "fx_pnl_jpy_per_day": -358.826279
+      "usdtry_rate_date": "2026-08-21",
+      "usdjpy_rate_date": "2026-08-21",
+      "usdtry_7d_ref_date": "2026-08-14",
+      "usdtry_7d_ref_rate": 47.87924957,
+      "usdtry_7d_change_pct": 0.36832165,
+      "usdtry_daily_change_pct": 0.05261738,
+      "fx_cost_jpy_per_day": 83.623747,
+      "fx_cost_jpy_accrual_total": 83.623747
     },
     {
       "date": "2026-08-24",
@@ -754,9 +945,14 @@
       "tryjpy_rep_rate": 3.30925512,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.0170002,
-      "fx_pnl_jpy_total": -56.257999,
-      "fx_pnl_jpy_per_day": -56.257999
+      "usdtry_rate_date": "2026-08-24",
+      "usdjpy_rate_date": "2026-08-24",
+      "usdtry_7d_ref_date": "2026-08-17",
+      "usdtry_7d_ref_rate": 47.89577484,
+      "usdtry_7d_change_pct": 0.36918616,
+      "usdtry_daily_change_pct": 0.05274088,
+      "fx_cost_jpy_per_day": 83.902562,
+      "fx_cost_jpy_accrual_total": 83.902562
     },
     {
       "date": "2026-08-25",
@@ -773,9 +969,14 @@
       "tryjpy_rep_rate": 3.3117763,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01655007,
-      "fx_pnl_jpy_total": -54.81013,
-      "fx_pnl_jpy_per_day": -54.81013
+      "usdtry_rate_date": "2026-08-25",
+      "usdjpy_rate_date": "2026-08-25",
+      "usdtry_7d_ref_date": "2026-08-18",
+      "usdtry_7d_ref_rate": 47.91455078,
+      "usdtry_7d_change_pct": 0.36439599,
+      "usdtry_daily_change_pct": 0.05205657,
+      "fx_cost_jpy_per_day": 82.905556,
+      "fx_cost_jpy_accrual_total": 82.905556
     },
     {
       "date": "2026-08-26",
@@ -792,9 +993,14 @@
       "tryjpy_rep_rate": 3.30887308,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.02300071,
-      "fx_pnl_jpy_total": -76.10643,
-      "fx_pnl_jpy_per_day": -76.10643
+      "usdtry_rate_date": "2026-08-26",
+      "usdjpy_rate_date": "2026-08-26",
+      "usdtry_7d_ref_date": "2026-08-19",
+      "usdtry_7d_ref_rate": 47.93079948,
+      "usdtry_7d_change_pct": 0.37835945,
+      "usdtry_daily_change_pct": 0.05405135,
+      "fx_cost_jpy_per_day": 86.048127,
+      "fx_cost_jpy_accrual_total": 86.048127
     },
     {
       "date": "2026-08-27",
@@ -811,9 +1017,14 @@
       "tryjpy_rep_rate": 3.31092207,
       "usdtry_rate_samples": 24,
       "usdjpy_rate_samples": 24,
-      "usdtry_change": 0.01824951,
-      "fx_pnl_jpy_total": -60.422705,
-      "fx_pnl_jpy_per_day": -20.140902
+      "usdtry_rate_date": "2026-08-27",
+      "usdjpy_rate_date": "2026-08-27",
+      "usdtry_7d_ref_date": "2026-08-20",
+      "usdtry_7d_ref_rate": 47.94709969,
+      "usdtry_7d_change_pct": 0.38229635,
+      "usdtry_daily_change_pct": 0.05461376,
+      "fx_cost_jpy_per_day": 87.030311,
+      "fx_cost_jpy_accrual_total": 261.090932
     },
     {
       "date": "2026-08-28",
@@ -830,9 +1041,14 @@
       "tryjpy_rep_rate": 3.30931325,
       "usdtry_rate_samples": 23,
       "usdjpy_rate_samples": 21,
-      "usdtry_change": 0.10709954,
-      "fx_pnl_jpy_total": -354.425927,
-      "fx_pnl_jpy_per_day": -354.425927
+      "usdtry_rate_date": "2026-08-28",
+      "usdjpy_rate_date": "2026-08-28",
+      "usdtry_7d_ref_date": "2026-08-21",
+      "usdtry_7d_ref_rate": 48.05559921,
+      "usdtry_7d_change_pct": 0.37851995,
+      "usdtry_daily_change_pct": 0.05407428,
+      "fx_cost_jpy_per_day": 86.320391,
+      "fx_cost_jpy_accrual_total": 86.320391
     }
   ]
 }
