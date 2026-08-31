@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark" />
   <meta name="theme-color" content="#07111f" />
   <title>USD/TRY Swap Watch</title>
-  <meta name="description" content="ヒロセ通商 LION FX の USD/TRY 売りスワップを円換算・1日あたりで可視化" />
+  <meta name="description" content="ヒロセ通商 LION FX の USD/TRY 売りスワップと為替損益を円換算・1日あたりで可視化" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./mobile-fix.css" />
@@ -20,7 +20,7 @@
       <div class="brand-block">
         <div class="eyebrow"><span class="pulse"></span> HIROSE · LION FX</div>
         <h1>USD/TRY <span>Swap Watch</span></h1>
-        <p class="lead">売りスワップをヒロセ通商の円換算値から<strong>1日あたり</strong>に正規化。現在値・変化・履歴をひと目で確認できます。</p>
+        <p class="lead">売りスワップとUSD/TRY売りの為替損益を<strong>円建て・1日あたり</strong>で比較。為替は日中の一瞬の高安ではなく、1時間足終値の中央値を代表レートにしています。</p>
       </div>
       <div class="header-side">
         <div class="status-pill" id="statusPill">データ読込中</div>
@@ -48,58 +48,26 @@
       </article>
 
       <div class="change-grid">
-        <article class="change-card">
-          <div class="change-label">前回比</div>
-          <div class="change-value" id="changePrev">—</div>
-          <div class="change-meta" id="changePrevMeta">直前付与日</div>
-        </article>
-        <article class="change-card">
-          <div class="change-label">7日前比</div>
-          <div class="change-value" id="changeWeek">—</div>
-          <div class="change-meta" id="changeWeekMeta">—</div>
-        </article>
-        <article class="change-card">
-          <div class="change-label">30日前比</div>
-          <div class="change-value" id="changeMonth">—</div>
-          <div class="change-meta" id="changeMonthMeta">—</div>
-        </article>
+        <article class="change-card"><div class="change-label">前回比</div><div class="change-value" id="changePrev">—</div><div class="change-meta" id="changePrevMeta">直前付与日</div></article>
+        <article class="change-card"><div class="change-label">7日前比</div><div class="change-value" id="changeWeek">—</div><div class="change-meta" id="changeWeekMeta">—</div></article>
+        <article class="change-card"><div class="change-label">30日前比</div><div class="change-value" id="changeMonth">—</div><div class="change-meta" id="changeMonthMeta">—</div></article>
       </div>
     </section>
 
     <section class="kpi-grid" aria-label="統計指標">
-      <article class="kpi">
-        <div class="kpi-label">7 OBS AVG</div>
-        <div class="kpi-value" id="avg7Value">—</div>
-        <div class="kpi-meta">直近7付与日の平均</div>
-      </article>
-      <article class="kpi">
-        <div class="kpi-label">30 OBS AVG</div>
-        <div class="kpi-value" id="avg30Value">—</div>
-        <div class="kpi-meta">直近30付与日の平均</div>
-      </article>
-      <article class="kpi">
-        <div class="kpi-label">30D ESTIMATE</div>
-        <div class="kpi-value" id="monthValue">—</div>
-        <div class="kpi-meta">30回平均 × 30日</div>
-      </article>
-      <article class="kpi range-card high">
-        <div class="kpi-label">RANGE HIGH</div>
-        <div class="kpi-value" id="highValue">—</div>
-        <div class="kpi-meta" id="highMeta">—</div>
-      </article>
-      <article class="kpi range-card low">
-        <div class="kpi-label">RANGE LOW</div>
-        <div class="kpi-value" id="lowValue">—</div>
-        <div class="kpi-meta" id="lowMeta">—</div>
-      </article>
+      <article class="kpi"><div class="kpi-label">7 OBS AVG</div><div class="kpi-value" id="avg7Value">—</div><div class="kpi-meta">直近7付与日の平均</div></article>
+      <article class="kpi"><div class="kpi-label">30 OBS AVG</div><div class="kpi-value" id="avg30Value">—</div><div class="kpi-meta">直近30付与日の平均</div></article>
+      <article class="kpi"><div class="kpi-label">30D ESTIMATE</div><div class="kpi-value" id="monthValue">—</div><div class="kpi-meta">30回平均 × 30日</div></article>
+      <article class="kpi range-card high"><div class="kpi-label">RANGE HIGH</div><div class="kpi-value" id="highValue">—</div><div class="kpi-meta" id="highMeta">—</div></article>
+      <article class="kpi range-card low"><div class="kpi-label">RANGE LOW</div><div class="kpi-value" id="lowValue">—</div><div class="kpi-meta" id="lowMeta">—</div></article>
     </section>
 
     <section class="panel chart-panel">
       <div class="panel-head chart-head">
         <div>
-          <div class="section-kicker">DAILY NORMALIZED SWAP</div>
-          <h2>円換算・1日あたり推移</h2>
-          <p class="panel-sub">3日付与日は●で強調。線は1日あたりに正規化済みです。</p>
+          <div class="section-kicker">DAILY JPY / USDTRY SHORT</div>
+          <h2>スワップと為替損益 / 日</h2>
+          <p class="panel-sub">為替損益は負＝差損、正＝差益。複数日付与日はスワップと同じ日数で日割り。</p>
         </div>
         <div class="chart-actions">
           <div class="range-switch" role="group" aria-label="表示期間">
@@ -107,47 +75,33 @@
             <button class="range-btn" data-range="90">90</button>
             <button class="range-btn active" data-range="all">ALL</button>
           </div>
+          <button class="series-btn active" id="toggleMa7" type="button" aria-pressed="true">MA7 ON</button>
           <button class="download-btn" id="downloadCsv">CSV ↓</button>
         </div>
       </div>
       <div class="chart-legend">
-        <span><i class="legend-dot actual"></i>実値</span>
-        <span><i class="legend-line"></i>7回移動平均</span>
-        <span><i class="legend-triple"></i>3日付与</span>
+        <span><i class="legend-dot actual"></i>スワップ / 日</span>
+        <span id="maLegend"><i class="legend-line"></i>7回移動平均</span>
+        <span><i class="legend-fx"></i>為替損益 / 日</span>
+        <span><i class="legend-triple"></i>複数日付与</span>
       </div>
-      <div class="chart-wrap">
-        <canvas id="swapChart" aria-label="USDTRY swap chart"></canvas>
-      </div>
+      <div class="chart-wrap"><canvas id="swapChart" aria-label="USDTRY swap and FX PnL chart"></canvas></div>
       <div class="chart-foot">
         <span id="rangeLabel">2026/07/01 —</span>
-        <span>0日付与は日次換算不能のため統計・線から除外</span>
+        <span>代表レート = UTC日付ごとの1時間足終値中央値</span>
       </div>
     </section>
 
     <div class="lower-grid">
       <section class="panel table-panel">
         <div class="panel-head compact">
-          <div>
-            <div class="section-kicker">RECENT</div>
-            <h2>直近データ</h2>
-          </div>
+          <div><div class="section-kicker">RECENT</div><h2>直近データ</h2></div>
           <a class="source-link" href="https://hirose-fx.co.jp/contents/news/Swap" target="_blank" rel="noreferrer">公式ソース ↗</a>
         </div>
         <div class="table-scroll">
           <table>
-            <thead>
-              <tr>
-                <th>日付</th>
-                <th>日数</th>
-                <th>売りpt</th>
-                <th>円換算合計</th>
-                <th>1日あたり</th>
-                <th>前回比</th>
-              </tr>
-            </thead>
-            <tbody id="recentBody">
-              <tr><td colspan="6" class="loading-cell">読み込み中…</td></tr>
-            </tbody>
+            <thead><tr><th>日付</th><th>日数</th><th>売りpt</th><th>円換算合計</th><th>1日あたり</th><th>前回比</th></tr></thead>
+            <tbody id="recentBody"><tr><td colspan="6" class="loading-cell">読み込み中…</td></tr></tbody>
           </table>
         </div>
       </section>
@@ -155,25 +109,20 @@
       <aside class="panel method-panel">
         <div class="section-kicker">METHOD</div>
         <h2>計算方法</h2>
-        <div class="formula">
-          <div>1日あたり</div>
-          <strong>売りスワップ円換算後 ÷ 付与日数</strong>
-        </div>
-        <p>ヒロセ通商の各取引日ページに掲載される USD/TRY の「売り（円換算後）」を直接取得。複数日付与も日割りするため、日ごとの水準を同じ基準で比較できます。</p>
+        <div class="formula"><div>スワップ / 日</div><strong>売りスワップ円換算後 ÷ 付与日数</strong></div>
+        <div class="formula fx-formula"><div>USD/TRY売り 為替損益 / 日</div><strong>−Lot × ΔUSD/TRY × TRY/JPY ÷ 付与日数</strong></div>
+        <p>為替の代表値はYahoo FinanceのUSD/TRY・USD/JPY 1時間足から、UTC日付ごとの<strong>終値中央値</strong>を採用します。日中高値・安値は計算に使わず、短時間のスパイクの影響を抑えます。TRY/JPYは同日の代表USD/JPY ÷ 代表USD/TRYで算出します。</p>
         <dl class="method-list">
           <div><dt>開始</dt><dd id="methodStart">2026/07/01</dd></div>
           <div><dt>基準Lot</dt><dd>1,000 USD</dd></div>
+          <div><dt>為替代表値</dt><dd>1時間足終値の中央値</dd></div>
           <div><dt>更新</dt><dd>毎日 10:30 JST</dd></div>
-          <div><dt>対象</dt><dd>USD/TRY 売り</dd></div>
         </dl>
         <a class="repo-link" href="https://github.com/ProtChan/USDTRY" target="_blank" rel="noreferrer">GitHub repository ↗</a>
       </aside>
     </div>
 
-    <footer>
-      <span>USD/TRY Swap Watch</span>
-      <span id="generatedAt">—</span>
-    </footer>
+    <footer><span>USD/TRY Swap Watch</span><span id="generatedAt">—</span></footer>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
