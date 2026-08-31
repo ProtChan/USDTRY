@@ -163,18 +163,44 @@ function buildSpark(rows) {
   if (state.spark) state.spark.destroy();
   state.spark = new Chart(canvas, {
     type: 'line',
-    data: { labels: rows.map(r => r.date), datasets: [{ data: values, borderColor: '#5ce1a7', backgroundColor: 'rgba(92,225,167,.08)', borderWidth: 2, pointRadius: 0, fill: true, tension: .35, spanGaps: true }] },
+    data: { labels: rows.map(r => r.date), datasets: [{ data: values, borderColor: '#5ce1a7', backgroundColor: 'rgba(92,225,167,.08)', borderWidth: 2, pointRadius: 0, fill: true, tension: .28, spanGaps: true }] },
     options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, elements: { line: { capBezierPoints: true } } }
   });
 }
 
+function stableAxisBounds() {
+  const values = validRows().map(scaledPerDay).filter(Number.isFinite);
+  if (!values.length) return { min: 0, max: 1, step: 1 };
+
+  const rawMin = Math.min(...values);
+  const rawMax = Math.max(...values);
+  const step = state.qty >= 10000 ? 100 : 10;
+  const padding = Math.max((rawMax - rawMin) * 0.12, step * 0.5);
+  const min = Math.max(0, Math.floor((rawMin - padding) / step) * step);
+  const max = Math.ceil((rawMax + padding) / step) * step;
+
+  return { min, max: max > min ? max : min + step, step };
+}
+
+function setCompactChartHeight() {
+  const wrap = document.querySelector('.chart-wrap');
+  if (!wrap) return;
+  wrap.style.height = window.matchMedia('(max-width: 620px)').matches ? '255px' : '300px';
+}
+
 function buildChart() {
   const canvas = document.getElementById('swapChart');
+  const allRows = state.payload.data;
   const rows = visibleRows();
   const labels = rows.map(row => row.date);
-  const actual = rows.map(scaledPerDay);
-  const ma7 = movingAverage(actual, 7);
+  const allActual = allRows.map(scaledPerDay);
+  const startIndex = Math.max(0, allRows.length - rows.length);
+  const actual = allActual.slice(startIndex);
+  const ma7 = movingAverage(allActual, 7).slice(startIndex);
   const triple = rows.map(row => row.days >= 3 ? scaledPerDay(row) : null);
+  const axis = stableAxisBounds();
+
+  setCompactChartHeight();
 
   if (state.chart) state.chart.destroy();
 
@@ -184,26 +210,64 @@ function buildChart() {
       labels,
       datasets: [
         {
-          label: '1日あたり', data: actual, borderColor: '#5ce1a7', backgroundColor: 'rgba(92,225,167,.10)',
-          pointBackgroundColor: '#5ce1a7', pointBorderColor: '#07111f', pointBorderWidth: 2, pointRadius: 2.6,
-          pointHoverRadius: 5, borderWidth: 2.2, fill: true, tension: .28, spanGaps: true,
+          label: '1日あたり',
+          data: actual,
+          borderColor: '#5ce1a7',
+          backgroundColor: 'rgba(92,225,167,.045)',
+          pointBackgroundColor: '#5ce1a7',
+          pointBorderColor: '#07111f',
+          pointBorderWidth: 2,
+          pointRadius(context) {
+            const i = context.dataIndex;
+            return i === rows.length - 1 && Number.isFinite(actual[i]) ? 3.6 : 0;
+          },
+          pointHoverRadius: 4.5,
+          pointHitRadius: 12,
+          borderWidth: 2,
+          fill: true,
+          tension: .18,
+          spanGaps: true,
         },
         {
-          label: '7回移動平均', data: ma7, borderColor: '#71a7ff', pointRadius: 0,
-          borderDash: [6, 5], borderWidth: 1.7, tension: .35, fill: false, spanGaps: true,
+          label: '7回移動平均',
+          data: ma7,
+          borderColor: '#71a7ff',
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          borderDash: [5, 4],
+          borderWidth: 1.45,
+          tension: .2,
+          fill: false,
+          spanGaps: true,
         },
         {
-          label: '3日付与', data: triple, showLine: false, pointRadius: 5.2, pointHoverRadius: 7,
-          pointBackgroundColor: '#f6c56d', pointBorderColor: '#07111f', pointBorderWidth: 2,
+          label: '3日付与',
+          data: triple,
+          showLine: false,
+          pointRadius: 4.2,
+          pointHoverRadius: 5.5,
+          pointHitRadius: 10,
+          pointBackgroundColor: '#f6c56d',
+          pointBorderColor: '#07111f',
+          pointBorderWidth: 1.7,
         }
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      resizeDelay: 120,
+      normalized: true,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#0b1728', borderColor: 'rgba(154,181,211,.18)', borderWidth: 1, padding: 12,
+          backgroundColor: '#0b1728',
+          borderColor: 'rgba(154,181,211,.18)',
+          borderWidth: 1,
+          padding: 10,
+          displayColors: false,
           filter(item) { return item.datasetIndex !== 2 || item.raw != null; },
           callbacks: {
             title(items) { return jpDate(labels[items[0].dataIndex]); },
@@ -213,14 +277,37 @@ function buildChart() {
             },
             afterBody(items) {
               const row = rows[items[0].dataIndex];
-              return [`付与日数: ${row.days}日`, `売りポイント: ${yen.format(row.sell_points)}`, `円換算合計: ${yen.format(row.sell_yen * scale())} 円`];
+              return [`付与 ${row.days}日 · 合計 ${yen.format(row.sell_yen * scale())}円`];
             }
           }
         }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { color: '#71849b', maxRotation: 0, autoSkip: true, maxTicksLimit: 9, callback(value) { return shortDate(labels[value]); } }, border: { color: 'rgba(154,181,211,.12)' } },
-        y: { grid: { color: 'rgba(154,181,211,.08)' }, ticks: { color: '#71849b', callback(value) { return `${yen0.format(value)}円`; } }, border: { display: false } }
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: '#71849b',
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 7,
+            padding: 5,
+            callback(value) { return shortDate(labels[value]); }
+          },
+          border: { color: 'rgba(154,181,211,.10)' }
+        },
+        y: {
+          min: axis.min,
+          max: axis.max,
+          grid: { color: 'rgba(154,181,211,.065)' },
+          ticks: {
+            color: '#71849b',
+            stepSize: axis.step,
+            maxTicksLimit: 6,
+            padding: 7,
+            callback(value) { return `${yen0.format(value)}円`; }
+          },
+          border: { display: false }
+        }
       }
     }
   });
@@ -301,6 +388,11 @@ document.querySelectorAll('.range-btn').forEach(button => {
       buildChart();
     }
   });
+});
+
+window.addEventListener('resize', () => {
+  setCompactChartHeight();
+  if (state.chart) state.chart.resize();
 });
 
 document.getElementById('downloadCsv').addEventListener('click', downloadCsv);
