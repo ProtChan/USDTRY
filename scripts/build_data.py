@@ -2,19 +2,23 @@ from __future__ import annotations
 
 import html as html_lib
 import json
+import math
 import re
+import statistics
 import time
 import urllib.parse
 import urllib.request
-from datetime import date, datetime, timezone
+from collections import defaultdict
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 BASE = "https://hirose-fx.co.jp"
 SOURCE_PAGE = f"{BASE}/contents/news/Swap"
 SOURCE_CSV = f"{BASE}/swap/lionfx_swap.csv"
+YAHOO_CHART = "https://query1.finance.yahoo.com/v8/finance/chart"
 START_DATE = date(2026, 7, 1)
 OUT = Path("data/usdtry.json")
-UA = {"User-Agent": "Mozilla/5.0 USDTRY-swap-watch/1.0"}
+UA = {"User-Agent": "Mozilla/5.0 USDTRY-swap-watch/1.1"}
 DATE_RE = re.compile(r"(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日")
 
 
@@ -49,7 +53,6 @@ def parse_number(value: str) -> float:
 def parse_current_date(page_html: str) -> date:
     pair_pos = page_html.find("USD/JPY")
     prefix = page_html[:pair_pos] if pair_pos >= 0 else page_html[:12000]
-    # Navigation dates are links; the current page date is plain text.
     without_links = re.sub(r"<a\b[^>]*>.*?</a>", " ", prefix, flags=re.I | re.S)
     text = strip_tags(without_links)
     matches = DATE_RE.findall(text)
@@ -122,6 +125,131 @@ def load_existing() -> dict:
     return json.loads(OUT.read_text(encoding="utf-8"))
 
 
+def yahoo_hourly_daily_median(symbol: str) -> dict[str, dict[str, float | int]]:
+    """Return a robust daily representative price from the median of hourly closes.
+
+    We deliberately do not use the day's high or low. Grouping is by UTC calendar
+    date so the calculation is deterministic on every Actions run.
+    """
+    period1 = int(datetime.combine(START_DATE - timedelta(days=3), datetime.min.time(), tzinfo=timezone.utc).timestamp())
+    period2 = int((datetime.now(timezone.utc) + timedelta(days=1)).timestamp())
+    query = urllib.parse.urlencode(
+        {
+            "period1": period1,
+            "period2": period2,
+            "interval": "1h",
+            "includePrePost": "false",
+            "events": "history",
+        }
+    )
+    symbol_path = urllib.parse.quote(symbol, safe="")
+    url = f"{YAHOO_CHART}/{symbol_path}?{query}"
+    payload = json.loads(fetch_bytes(url).decode("utf-8"))
+    result = (payload.get("chart") or {}).get("result") or []
+    if not result:
+        raise RuntimeError(f"Yahoo chart returned no result for {symbol}: {(payload.get('chart') or {}).get('error')}")
+
+    body = result[0]
+    timestamps = body.get("timestamp") or []
+    quote = ((body.get("indicators") or {}).get("quote") or [{}])[0]
+    closes = quote.get("close") or []
+    grouped: dict[str, list[float]] = defaultdict(list)
+
+    for ts, close in zip(timestamps, closes):
+        if close is None:
+            continue
+        value = float(close)
+        if not math.isfinite(value) or value <= 0:
+            continue
+        day = datetime.fromtimestamp(int(ts), timezone.utc).date().isoformat()
+        grouped[day].append(value)
+
+    if not grouped:
+        raise RuntimeError(f"Yahoo chart returned no usable hourly closes for {symbol}")
+
+    return {
+        day: {
+            "median": round(float(statistics.median(values)), 8),
+            "samples": len(values),
+        }
+        for day, values in grouped.items()
+        if values
+    }
+
+
+def enrich_market_rates(data: list[dict]) -> bool:
+    """Attach representative rates and signed JPY FX P/L for a USD/TRY short.
+
+    Short USD/TRY P/L in TRY = -lot * (USDTRY_t - USDTRY_t-1).
+    The TRY P/L is converted with that day's representative TRY/JPY cross and,
+    when Hirose grants multiple swap days, divided by the same accrual-day count.
+    Negative values therefore mean FX loss and positive values mean FX gain.
+    """
+    try:
+        usdtry = yahoo_hourly_daily_median("USDTRY=X")
+        time.sleep(0.7)
+        usdjpy = yahoo_hourly_daily_median("USDJPY=X")
+    except Exception as exc:
+        print(f"market-rate enrichment skipped: {exc}")
+        return False
+
+    for row in data:
+        day = row["date"]
+        a = usdtry.get(day)
+        b = usdjpy.get(day)
+        if a and b:
+            row["usdtry_rep_rate"] = a["median"]
+            row["usdjpy_rep_rate"] = b["median"]
+            row["tryjpy_rep_rate"] = round(float(b["median"]) / float(a["median"]), 8)
+            row["usdtry_rate_samples"] = int(a["samples"])
+            row["usdjpy_rate_samples"] = int(b["samples"])
+
+    previous: dict | None = None
+    for row in data:
+        usdtry_now = row.get("usdtry_rep_rate")
+        tryjpy_now = row.get("tryjpy_rep_rate")
+        if not (isinstance(usdtry_now, (int, float)) and isinstance(tryjpy_now, (int, float))):
+            row["usdtry_change"] = None
+            row["fx_pnl_jpy_total"] = None
+            row["fx_pnl_jpy_per_day"] = None
+            continue
+
+        if previous is None:
+            row["usdtry_change"] = None
+            row["fx_pnl_jpy_total"] = None
+            row["fx_pnl_jpy_per_day"] = None
+        else:
+            delta = float(usdtry_now) - float(previous["usdtry_rep_rate"])
+            pnl_try = -float(row.get("lot_size") or 1000) * delta
+            pnl_jpy_total = pnl_try * float(tryjpy_now)
+            days = int(row.get("days") or 0)
+            row["usdtry_change"] = round(delta, 8)
+            row["fx_pnl_jpy_total"] = round(pnl_jpy_total, 6)
+            row["fx_pnl_jpy_per_day"] = round(pnl_jpy_total / days, 6) if days > 0 else None
+
+        previous = row
+
+    return True
+
+
+def static_meta_for(data: list[dict]) -> dict:
+    return {
+        "pair": "USD/TRY",
+        "side": "sell",
+        "description": "Hirose LION FX USD/TRY sell swap plus representative-rate FX P/L, JPY normalized per accrual day",
+        "start_date": START_DATE.isoformat(),
+        "latest_date": data[-1]["date"],
+        "lot_size": 1000,
+        "source_page": SOURCE_PAGE,
+        "source_csv": SOURCE_CSV,
+        "market_rate_source": "Yahoo Finance chart API: USDTRY=X and USDJPY=X",
+        "market_rate_method": "UTC calendar-day median of 1-hour closing prices; daily high/low are not used",
+        "normalization": "swap=sell_yen/days; fx_pnl=short USDTRY representative-rate change converted via representative TRYJPY, then divided by days; 0-day rows are null",
+        "fx_pnl_sign": "negative=FX loss for USDTRY short, positive=FX gain",
+        "records": len(data),
+    }
+
+
 def main() -> None:
     existing = load_existing()
     by_date = {item["date"]: item for item in existing.get("data", []) if item.get("date")}
@@ -135,18 +263,13 @@ def main() -> None:
 
     while current_date >= START_DATE:
         values = parse_usdtry_row(page_html)
+        old = by_date.get(current_date.isoformat(), {})
         candidate = {
+            **old,
             "date": current_date.isoformat(),
             **values,
             "source_url": current_url,
         }
-
-        # A daily scheduled check should not create a meaningless commit when
-        # Hirose has not published a new date and the latest row is unchanged.
-        if existing_latest == current_date and by_date.get(candidate["date"]) == candidate:
-            print(f"already up to date: {current_date.isoformat()}")
-            return
-
         by_date[candidate["date"]] = candidate
         fetched += 1
         print(
@@ -176,18 +299,21 @@ def main() -> None:
     if date.fromisoformat(data[0]["date"]) != START_DATE:
         raise RuntimeError(f"Backfill did not reach {START_DATE}: first={data[0]['date']}")
 
+    enriched = enrich_market_rates(data)
+    if enriched:
+        fx_count = sum(1 for row in data if row.get("fx_pnl_jpy_per_day") is not None)
+        print(f"market-rate enrichment complete: {fx_count} FX P/L observations")
+
+    static_meta = static_meta_for(data)
+    old_meta = existing.get("meta", {})
+    relevant_old_meta = {key: old_meta.get(key) for key in static_meta}
+    if existing.get("data") == data and relevant_old_meta == static_meta:
+        print(f"already up to date: {data[-1]['date']}")
+        return
+
     meta = {
-        "pair": "USD/TRY",
-        "side": "sell",
-        "description": "Hirose LION FX USD/TRY sell swap, JPY converted and normalized per accrual day",
-        "start_date": START_DATE.isoformat(),
-        "latest_date": data[-1]["date"],
-        "lot_size": 1000,
-        "source_page": SOURCE_PAGE,
-        "source_csv": SOURCE_CSV,
-        "normalization": "sell_yen / days when days > 0; 0-day rows are kept with sell_yen_per_day=null",
+        **static_meta,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "records": len(data),
         "pages_fetched_this_run": fetched,
     }
 
