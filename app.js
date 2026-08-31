@@ -137,6 +137,7 @@ function updateTable() {
   const body = document.getElementById('recentBody');
   const rows = [...state.payload.data].reverse().slice(0, 12);
   const chronologicalValid = validRows();
+
   body.innerHTML = rows.map(row => {
     const total = row.sell_yen * scale();
     const daily = scaledPerDay(row);
@@ -156,8 +157,26 @@ function buildSpark(rows) {
   if (state.spark) state.spark.destroy();
   state.spark = new Chart(canvas, {
     type: 'line',
-    data: { labels: rows.map(r => r.date), datasets: [{ data: values, borderColor: '#5ce1a7', backgroundColor: 'rgba(92,225,167,.08)', borderWidth: 2, pointRadius: 0, fill: true, tension: .28, spanGaps: true }] },
-    options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }
+    data: {
+      labels: rows.map(r => r.date),
+      datasets: [{
+        data: values,
+        borderColor: '#5ce1a7',
+        backgroundColor: 'rgba(92,225,167,.08)',
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: true,
+        tension: .28,
+        spanGaps: true,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false } },
+    },
   });
 }
 
@@ -207,64 +226,143 @@ function buildChart() {
 
   state.chart = new Chart(canvas, {
     type: 'line',
-    data: { labels, datasets: [
-      {
-        label: 'スワップ / 日', data: actual, borderColor: '#5ce1a7', backgroundColor: 'rgba(92,225,167,.035)',
-        pointBackgroundColor: '#5ce1a7', pointBorderColor: '#07111f', pointBorderWidth: 2,
-        pointRadius(ctx) { return ctx.dataIndex === rows.length - 1 && Number.isFinite(actual[ctx.dataIndex]) ? 3.6 : 0; },
-        pointHoverRadius: 4.5, pointHitRadius: 12, borderWidth: 2, fill: true, tension: .18, spanGaps: true,
-      },
-      {
-        label: '7回移動平均', data: ma7, borderColor: '#71a7ff', pointRadius: 0, pointHoverRadius: 0,
-        borderDash: [5, 4], borderWidth: 1.45, tension: .2, fill: false, spanGaps: true, hidden: !state.showMa7,
-      },
-      {
-        label: '7日平均 為替差損 / 日', data: fxCost, borderColor: '#ff9d7a', backgroundColor: 'transparent',
-        pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 12, borderWidth: 1.9, tension: .16, fill: false, spanGaps: true,
-      },
-      {
-        label: '複数日付与', data: multiDay, showLine: false, pointRadius: 4.1, pointHoverRadius: 5.4,
-        pointHitRadius: 10, pointBackgroundColor: '#f6c56d', pointBorderColor: '#07111f', pointBorderWidth: 1.7,
-      }
-    ]},
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'スワップ / 日',
+          data: actual,
+          borderColor: '#5ce1a7',
+          backgroundColor: 'rgba(92,225,167,.035)',
+          pointBackgroundColor: '#5ce1a7',
+          pointBorderColor: '#07111f',
+          pointBorderWidth: 2,
+          pointRadius(ctx) {
+            return ctx.dataIndex === rows.length - 1 && Number.isFinite(actual[ctx.dataIndex]) ? 3.6 : 0;
+          },
+          pointHoverRadius: 4.5,
+          pointHitRadius: 12,
+          borderWidth: 2,
+          fill: true,
+          tension: .18,
+          spanGaps: true,
+        },
+        {
+          label: '7回移動平均',
+          data: ma7,
+          borderColor: '#71a7ff',
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          borderDash: [5, 4],
+          borderWidth: 1.45,
+          tension: .2,
+          fill: false,
+          spanGaps: true,
+          hidden: !state.showMa7,
+        },
+        {
+          label: '為替差損 / 日',
+          data: fxCost,
+          borderColor: '#ff9d7a',
+          backgroundColor: 'transparent',
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHitRadius: 12,
+          borderWidth: 1.9,
+          tension: .16,
+          fill: false,
+          spanGaps: true,
+        },
+        {
+          label: '複数日付与',
+          data: multiDay,
+          showLine: false,
+          pointRadius: 4.1,
+          pointHoverRadius: 5.4,
+          pointHitRadius: 10,
+          pointBackgroundColor: '#f6c56d',
+          pointBorderColor: '#07111f',
+          pointBorderWidth: 1.7,
+        },
+      ],
+    },
     options: {
-      responsive: true, maintainAspectRatio: false, animation: false, resizeDelay: 120, normalized: true,
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      resizeDelay: 120,
+      normalized: true,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#0b1728', borderColor: 'rgba(154,181,211,.18)', borderWidth: 1, padding: 10, displayColors: false,
-          filter(item) { return item.datasetIndex === 0 || item.datasetIndex === 2; },
+          backgroundColor: '#0b1728',
+          borderColor: 'rgba(154,181,211,.18)',
+          borderWidth: 1,
+          padding: 9,
+          displayColors: false,
+          titleMarginBottom: 6,
+          bodySpacing: 3,
+          filter(item) {
+            return item.datasetIndex === 0;
+          },
           callbacks: {
-            title(items) { return jpDate(labels[items[0].dataIndex]); },
-            label(context) {
-              if (!Number.isFinite(context.raw)) return null;
-              if (context.datasetIndex === 0) return `スワップ: ${yen.format(context.raw)} 円 / 日`;
-              const label = context.raw >= 0 ? '為替差損' : '為替差益';
-              return `${label}: ${yen.format(Math.abs(context.raw))} 円 / 日`;
+            title(items) {
+              return jpDate(labels[items[0].dataIndex]);
             },
-            afterBody(items) {
-              const index = items[0].dataIndex;
+            label(context) {
+              const index = context.dataIndex;
               const swap = actual[index];
               const fx = fxCost[index];
-              if (!Number.isFinite(swap) || !Number.isFinite(fx)) return [];
-              const diff = swap - fx;
-              const prefix = diff > 0 ? '+' : '';
-              return [`差分: ${prefix}${yen.format(diff)} 円 / 日`];
-            }
-          }
-        }
+              const diff = Number.isFinite(swap) && Number.isFinite(fx) ? swap - fx : null;
+              const fxLabel = Number.isFinite(fx) && fx < 0 ? '為替差益' : '為替差損';
+              const fxText = Number.isFinite(fx) ? `${yen.format(Math.abs(fx))} 円 / 日` : '—';
+              const diffText = Number.isFinite(diff) ? `${diff > 0 ? '+' : ''}${yen.format(diff)} 円 / 日` : '—';
+
+              return [
+                `スワップ: ${Number.isFinite(swap) ? `${yen.format(swap)} 円 / 日` : '—'}`,
+                `${fxLabel}: ${fxText}`,
+                `差分: ${diffText}`,
+              ];
+            },
+            afterLabel() { return null; },
+            afterBody() { return []; },
+            footer() { return ''; },
+          },
+        },
       },
       scales: {
-        x: { grid: { display: false }, ticks: { color: '#71849b', maxRotation: 0, autoSkip: true, maxTicksLimit: 7, padding: 5, callback(value) { return shortDate(labels[value]); } }, border: { color: 'rgba(154,181,211,.10)' } },
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: '#71849b',
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 7,
+            padding: 5,
+            callback(value) { return shortDate(labels[value]); },
+          },
+          border: { color: 'rgba(154,181,211,.10)' },
+        },
         y: {
-          min: axis.min, max: axis.max,
-          grid: { color(ctx) { return ctx.tick.value === 0 ? 'rgba(245,248,252,.22)' : 'rgba(154,181,211,.065)'; } },
-          ticks: { color: '#71849b', stepSize: axis.step, maxTicksLimit: 7, padding: 7, callback(value) { return `${yen0.format(value)}円`; } },
-          border: { display: false }
-        }
-      }
-    }
+          min: axis.min,
+          max: axis.max,
+          grid: {
+            color(ctx) {
+              return ctx.tick.value === 0 ? 'rgba(245,248,252,.22)' : 'rgba(154,181,211,.065)';
+            },
+          },
+          ticks: {
+            color: '#71849b',
+            stepSize: axis.step,
+            maxTicksLimit: 7,
+            padding: 7,
+            callback(value) { return `${yen0.format(value)}円`; },
+          },
+          border: { display: false },
+        },
+      },
+    },
   });
 
   const first = rows[0]?.date || state.payload.meta.start_date;
@@ -289,17 +387,57 @@ function csvEscape(value) {
 
 function downloadCsv() {
   const s = scale();
-  const header = ['date','days','lot_usd','sell_points','sell_yen_total','swap_yen_per_day','usdtry_rep_rate','usdjpy_rep_rate','usdtry_7d_ref_date','usdtry_7d_ref_rate','usdtry_7d_change_pct','usdtry_daily_change_pct','fx_cost_yen_per_day','fx_cost_yen_accrual_total','source_url'];
-  const rows = state.payload.data.map(row => [row.date,row.days,state.qty,row.sell_points,row.sell_yen*s,row.sell_yen_per_day==null?'':row.sell_yen_per_day*s,row.usdtry_rep_rate??'',row.usdjpy_rep_rate??'',row.usdtry_7d_ref_date??'',row.usdtry_7d_ref_rate??'',row.usdtry_7d_change_pct??'',row.usdtry_daily_change_pct??'',row.fx_cost_jpy_per_day==null?'':row.fx_cost_jpy_per_day*s,row.fx_cost_jpy_accrual_total==null?'':row.fx_cost_jpy_accrual_total*s,row.source_url]);
+  const header = [
+    'date',
+    'days',
+    'lot_usd',
+    'sell_points',
+    'sell_yen_total',
+    'swap_yen_per_day',
+    'usdtry_rep_rate',
+    'usdjpy_rep_rate',
+    'usdtry_prev_date',
+    'usdtry_prev_rate',
+    'usdtry_change',
+    'fx_cost_yen_total',
+    'fx_cost_yen_per_day',
+    'source_url',
+  ];
+  const rows = state.payload.data.map(row => [
+    row.date,
+    row.days,
+    state.qty,
+    row.sell_points,
+    row.sell_yen * s,
+    row.sell_yen_per_day == null ? '' : row.sell_yen_per_day * s,
+    row.usdtry_rep_rate ?? '',
+    row.usdjpy_rep_rate ?? '',
+    row.usdtry_prev_date ?? '',
+    row.usdtry_prev_rate ?? '',
+    row.usdtry_change ?? '',
+    row.fx_cost_jpy_total == null ? '' : row.fx_cost_jpy_total * s,
+    row.fx_cost_jpy_per_day == null ? '' : row.fx_cost_jpy_per_day * s,
+    row.source_url,
+  ]);
   const csv = '\uFEFF' + [header, ...rows].map(row => row.map(csvEscape).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `USDTRY_swap_fx_${state.qty}USD_${state.payload.meta.latest_date}.csv`;
-  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  a.href = url;
+  a.download = `USDTRY_swap_fx_${state.qty}USD_${state.payload.meta.latest_date}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
-function render() { updateHeader(); updateSnapshot(); updateKpis(); updateTable(); buildChart(); }
+function render() {
+  updateHeader();
+  updateSnapshot();
+  updateKpis();
+  updateTable();
+  buildChart();
+}
 
 async function loadData() {
   try {
@@ -310,7 +448,8 @@ async function loadData() {
   } catch (error) {
     console.error(error);
     const status = document.getElementById('statusPill');
-    status.textContent = 'データ取得エラー'; status.className = 'status-pill error';
+    status.textContent = 'データ取得エラー';
+    status.className = 'status-pill error';
     document.getElementById('recentBody').innerHTML = '<tr><td colspan="6" class="loading-cell">データを読み込めませんでした</td></tr>';
   }
 }
@@ -324,7 +463,10 @@ document.querySelectorAll('.unit-btn').forEach(button => button.addEventListener
 document.querySelectorAll('.range-btn').forEach(button => button.addEventListener('click', () => {
   state.range = button.dataset.range;
   document.querySelectorAll('.range-btn').forEach(b => b.classList.toggle('active', b === button));
-  if (state.payload) { updateKpis(); buildChart(); }
+  if (state.payload) {
+    updateKpis();
+    buildChart();
+  }
 }));
 
 document.getElementById('toggleMa7').addEventListener('click', event => {
