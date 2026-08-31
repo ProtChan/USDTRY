@@ -2,15 +2,18 @@
   "meta": {
     "pair": "USD/TRY",
     "side": "sell",
-    "description": "Hirose LION FX USD/TRY sell swap, JPY converted and normalized per accrual day",
+    "description": "Hirose LION FX USD/TRY sell swap plus representative-rate FX P/L, JPY normalized per accrual day",
     "start_date": "2026-07-01",
     "latest_date": "2026-08-28",
     "lot_size": 1000,
     "source_page": "https://hirose-fx.co.jp/contents/news/Swap",
     "source_csv": "https://hirose-fx.co.jp/swap/lionfx_swap.csv",
-    "normalization": "sell_yen / days when days > 0; 0-day rows are kept with sell_yen_per_day=null",
-    "generated_at": "2026-08-31T06:10:53+00:00",
+    "market_rate_source": "Yahoo Finance chart API: USDTRY=X and USDJPY=X",
+    "market_rate_method": "UTC calendar-day median of 1-hour closing prices; daily high/low are not used",
+    "normalization": "swap=sell_yen/days; fx_pnl=short USDTRY representative-rate change converted via representative TRYJPY, then divided by days; 0-day rows are null",
+    "fx_pnl_sign": "negative=FX loss for USDTRY short, positive=FX gain",
     "records": 43,
+    "generated_at": "2026-08-31T12:34:55+00:00",
     "pages_fetched_this_run": 1
   },
   "data": [
@@ -23,7 +26,15 @@
       "sell_yen": 116.3,
       "buy_yen": -137.19,
       "sell_yen_per_day": 116.3,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4842"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4842",
+      "usdtry_rep_rate": 46.66179848,
+      "usdjpy_rep_rate": 162.66699982,
+      "tryjpy_rep_rate": 3.48608509,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": null,
+      "fx_pnl_jpy_total": null,
+      "fx_pnl_jpy_per_day": null
     },
     {
       "date": "2026-07-02",
@@ -34,7 +45,15 @@
       "sell_yen": 346.81,
       "buy_yen": -409.48,
       "sell_yen_per_day": 115.603333,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4843"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4843",
+      "usdtry_rep_rate": 46.68984985,
+      "usdjpy_rep_rate": 161.23000336,
+      "tryjpy_rep_rate": 3.45321315,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.02805137,
+      "fx_pnl_jpy_total": -96.86736,
+      "fx_pnl_jpy_per_day": -32.28912
     },
     {
       "date": "2026-07-03",
@@ -45,7 +64,15 @@
       "sell_yen": 116.89,
       "buy_yen": -137.52,
       "sell_yen_per_day": 116.89,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4844"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4844",
+      "usdtry_rep_rate": 46.79920006,
+      "usdjpy_rep_rate": 161.16700745,
+      "tryjpy_rep_rate": 3.44379834,
+      "usdtry_rate_samples": 22,
+      "usdjpy_rate_samples": 21,
+      "usdtry_change": 0.10935021,
+      "fx_pnl_jpy_total": -376.580072,
+      "fx_pnl_jpy_per_day": -376.580072
     },
     {
       "date": "2026-07-06",
@@ -56,7 +83,15 @@
       "sell_yen": 115.41,
       "buy_yen": -136.08,
       "sell_yen_per_day": 115.41,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4845"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4845",
+      "usdtry_rep_rate": 46.81369972,
+      "usdjpy_rep_rate": 162.12449646,
+      "tryjpy_rep_rate": 3.46318487,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01449966,
+      "fx_pnl_jpy_total": -50.215003,
+      "fx_pnl_jpy_per_day": -50.215003
     },
     {
       "date": "2026-07-07",
@@ -67,7 +102,15 @@
       "sell_yen": 115.84,
       "buy_yen": -136.59,
       "sell_yen_per_day": 115.84,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4846"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4846",
+      "usdtry_rep_rate": 46.83259964,
+      "usdjpy_rep_rate": 161.91899872,
+      "tryjpy_rep_rate": 3.45739933,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01889992,
+      "fx_pnl_jpy_total": -65.344571,
+      "fx_pnl_jpy_per_day": -65.344571
     },
     {
       "date": "2026-07-08",
@@ -78,7 +121,15 @@
       "sell_yen": 98.55,
       "buy_yen": -119.3,
       "sell_yen_per_day": 98.55,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4847"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4847",
+      "usdtry_rep_rate": 46.85035133,
+      "usdjpy_rep_rate": 162.48149872,
+      "tryjpy_rep_rate": 3.46809563,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01775169,
+      "fx_pnl_jpy_total": -61.564559,
+      "fx_pnl_jpy_per_day": -61.564559
     },
     {
       "date": "2026-07-09",
@@ -89,7 +140,15 @@
       "sell_yen": 291.31,
       "buy_yen": -353.74,
       "sell_yen_per_day": 97.103333,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4848"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4848",
+      "usdtry_rep_rate": 46.87014961,
+      "usdjpy_rep_rate": 162.36999512,
+      "tryjpy_rep_rate": 3.46425169,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01979828,
+      "fx_pnl_jpy_total": -68.586225,
+      "fx_pnl_jpy_per_day": -22.862075
     },
     {
       "date": "2026-07-10",
@@ -100,7 +159,15 @@
       "sell_yen": 117.5,
       "buy_yen": -138.24,
       "sell_yen_per_day": 117.5,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4849"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4849",
+      "usdtry_rep_rate": 46.97764969,
+      "usdjpy_rep_rate": 161.68099976,
+      "tryjpy_rep_rate": 3.44165791,
+      "usdtry_rate_samples": 22,
+      "usdjpy_rate_samples": 21,
+      "usdtry_change": 0.10750008,
+      "fx_pnl_jpy_total": -369.978501,
+      "fx_pnl_jpy_per_day": -369.978501
     },
     {
       "date": "2026-07-13",
@@ -111,7 +178,15 @@
       "sell_yen": 231.02,
       "buy_yen": -272.39,
       "sell_yen_per_day": 115.51,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4850"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4850",
+      "usdtry_rep_rate": 46.99534988,
+      "usdjpy_rep_rate": 162.22949982,
+      "tryjpy_rep_rate": 3.45203303,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01770019,
+      "fx_pnl_jpy_total": -61.101641,
+      "fx_pnl_jpy_per_day": -30.55082
     },
     {
       "date": "2026-07-14",
@@ -122,7 +197,15 @@
       "sell_yen": 0.0,
       "buy_yen": 0.0,
       "sell_yen_per_day": null,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4851"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4851",
+      "usdtry_rep_rate": 47.02975082,
+      "usdjpy_rep_rate": 162.21800232,
+      "tryjpy_rep_rate": 3.44926349,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.03440094,
+      "fx_pnl_jpy_total": -118.657906,
+      "fx_pnl_jpy_per_day": null
     },
     {
       "date": "2026-07-15",
@@ -133,7 +216,15 @@
       "sell_yen": 100.65,
       "buy_yen": -121.33,
       "sell_yen_per_day": 100.65,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4852"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4852",
+      "usdtry_rep_rate": 47.02619934,
+      "usdjpy_rep_rate": 162.15750122,
+      "tryjpy_rep_rate": 3.44823744,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": -0.00355148,
+      "fx_pnl_jpy_total": 12.246346,
+      "fx_pnl_jpy_per_day": 12.246346
     },
     {
       "date": "2026-07-16",
@@ -144,7 +235,15 @@
       "sell_yen": 301.94,
       "buy_yen": -363.77,
       "sell_yen_per_day": 100.646667,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4853"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4853",
+      "usdtry_rep_rate": 47.05004883,
+      "usdjpy_rep_rate": 162.23150635,
+      "tryjpy_rep_rate": 3.44806244,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.02384949,
+      "fx_pnl_jpy_total": -82.234531,
+      "fx_pnl_jpy_per_day": -27.41151
     },
     {
       "date": "2026-07-17",
@@ -155,7 +254,15 @@
       "sell_yen": 84.5,
       "buy_yen": -105.11,
       "sell_yen_per_day": 84.5,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4854"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4854",
+      "usdtry_rep_rate": 47.1501503,
+      "usdjpy_rep_rate": 162.40400696,
+      "tryjpy_rep_rate": 3.44440062,
+      "usdtry_rate_samples": 19,
+      "usdjpy_rate_samples": 18,
+      "usdtry_change": 0.10010147,
+      "fx_pnl_jpy_total": -344.789565,
+      "fx_pnl_jpy_per_day": -344.789565
     },
     {
       "date": "2026-07-20",
@@ -166,7 +273,15 @@
       "sell_yen": 84.33,
       "buy_yen": -104.98,
       "sell_yen_per_day": 84.33,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4855"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4855",
+      "usdtry_rep_rate": 47.17429924,
+      "usdjpy_rep_rate": 162.40699768,
+      "tryjpy_rep_rate": 3.4427008,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.02414894,
+      "fx_pnl_jpy_total": -83.137575,
+      "fx_pnl_jpy_per_day": -83.137575
     },
     {
       "date": "2026-07-21",
@@ -177,7 +292,15 @@
       "sell_yen": 84.67,
       "buy_yen": -105.41,
       "sell_yen_per_day": 84.67,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4856"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4856",
+      "usdtry_rep_rate": 47.19204903,
+      "usdjpy_rep_rate": 162.72200012,
+      "tryjpy_rep_rate": 3.44808084,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01774979,
+      "fx_pnl_jpy_total": -61.202711,
+      "fx_pnl_jpy_per_day": -61.202711
     },
     {
       "date": "2026-07-22",
@@ -188,7 +311,15 @@
       "sell_yen": 117.44,
       "buy_yen": -138.16,
       "sell_yen_per_day": 117.44,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4857"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4857",
+      "usdtry_rep_rate": 47.20798874,
+      "usdjpy_rep_rate": 163.10600281,
+      "tryjpy_rep_rate": 3.45505088,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01593971,
+      "fx_pnl_jpy_total": -55.072509,
+      "fx_pnl_jpy_per_day": -55.072509
     },
     {
       "date": "2026-07-23",
@@ -199,7 +330,15 @@
       "sell_yen": 331.97,
       "buy_yen": -394.21,
       "sell_yen_per_day": 110.656667,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4858"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4858",
+      "usdtry_rep_rate": 47.22949982,
+      "usdjpy_rep_rate": 163.5739975,
+      "tryjpy_rep_rate": 3.46338619,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.02151108,
+      "fx_pnl_jpy_total": -74.501177,
+      "fx_pnl_jpy_per_day": -24.833726
     },
     {
       "date": "2026-07-24",
@@ -210,7 +349,15 @@
       "sell_yen": 124.45,
       "buy_yen": -145.19,
       "sell_yen_per_day": 124.45,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4860"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4860",
+      "usdtry_rep_rate": 47.33925056,
+      "usdjpy_rep_rate": 163.78799438,
+      "tryjpy_rep_rate": 3.45987721,
+      "usdtry_rate_samples": 22,
+      "usdjpy_rate_samples": 21,
+      "usdtry_change": 0.10975074,
+      "fx_pnl_jpy_total": -379.724084,
+      "fx_pnl_jpy_per_day": -379.724084
     },
     {
       "date": "2026-07-27",
@@ -221,7 +368,15 @@
       "sell_yen": 128.53,
       "buy_yen": -149.26,
       "sell_yen_per_day": 128.53,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4861"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4861",
+      "usdtry_rep_rate": 47.34934998,
+      "usdjpy_rep_rate": 163.64450073,
+      "tryjpy_rep_rate": 3.45610871,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01009942,
+      "fx_pnl_jpy_total": -34.904693,
+      "fx_pnl_jpy_per_day": -34.904693
     },
     {
       "date": "2026-07-28",
@@ -232,7 +387,15 @@
       "sell_yen": 115.05,
       "buy_yen": -135.78,
       "sell_yen_per_day": 115.05,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4862"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4862",
+      "usdtry_rep_rate": 47.3702507,
+      "usdjpy_rep_rate": 163.80550385,
+      "tryjpy_rep_rate": 3.45798262,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.02090072,
+      "fx_pnl_jpy_total": -72.274327,
+      "fx_pnl_jpy_per_day": -72.274327
     },
     {
       "date": "2026-07-29",
@@ -243,7 +406,15 @@
       "sell_yen": 116.1,
       "buy_yen": -136.77,
       "sell_yen_per_day": 116.1,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4863"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4863",
+      "usdtry_rep_rate": 47.3927002,
+      "usdjpy_rep_rate": 163.63250732,
+      "tryjpy_rep_rate": 3.45269433,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.0224495,
+      "fx_pnl_jpy_total": -77.511261,
+      "fx_pnl_jpy_per_day": -77.511261
     },
     {
       "date": "2026-07-30",
@@ -254,7 +425,15 @@
       "sell_yen": 323.95,
       "buy_yen": -384.51,
       "sell_yen_per_day": 107.983333,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4864"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4864",
+      "usdtry_rep_rate": 47.41009903,
+      "usdjpy_rep_rate": 162.85099792,
+      "tryjpy_rep_rate": 3.43494321,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01739883,
+      "fx_pnl_jpy_total": -59.763993,
+      "fx_pnl_jpy_per_day": -19.921331
     },
     {
       "date": "2026-07-31",
@@ -265,7 +444,15 @@
       "sell_yen": 118.26,
       "buy_yen": -138.2,
       "sell_yen_per_day": 118.26,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4865"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4865",
+      "usdtry_rep_rate": 47.51789856,
+      "usdjpy_rep_rate": 159.98699951,
+      "tryjpy_rep_rate": 3.36687868,
+      "usdtry_rate_samples": 21,
+      "usdjpy_rate_samples": 22,
+      "usdtry_change": 0.10779953,
+      "fx_pnl_jpy_total": -362.947939,
+      "fx_pnl_jpy_per_day": -362.947939
     },
     {
       "date": "2026-08-03",
@@ -276,7 +463,15 @@
       "sell_yen": 121.55,
       "buy_yen": -141.37,
       "sell_yen_per_day": 121.55,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4866"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4866",
+      "usdtry_rep_rate": 47.53044891,
+      "usdjpy_rep_rate": 156.8010025,
+      "tryjpy_rep_rate": 3.29895901,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01255035,
+      "fx_pnl_jpy_total": -41.40309,
+      "fx_pnl_jpy_per_day": -41.40309
     },
     {
       "date": "2026-08-04",
@@ -287,7 +482,15 @@
       "sell_yen": 116.39,
       "buy_yen": -136.29,
       "sell_yen_per_day": 116.39,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4867"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4867",
+      "usdtry_rep_rate": 47.54536438,
+      "usdjpy_rep_rate": 157.66249847,
+      "tryjpy_rep_rate": 3.31604354,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01491547,
+      "fx_pnl_jpy_total": -49.460348,
+      "fx_pnl_jpy_per_day": -49.460348
     },
     {
       "date": "2026-08-05",
@@ -298,7 +501,15 @@
       "sell_yen": 112.31,
       "buy_yen": -132.19,
       "sell_yen_per_day": 112.31,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4868"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4868",
+      "usdtry_rep_rate": 47.56674957,
+      "usdjpy_rep_rate": 157.65499878,
+      "tryjpy_rep_rate": 3.31439504,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.02138519,
+      "fx_pnl_jpy_total": -70.878968,
+      "fx_pnl_jpy_per_day": -70.878968
     },
     {
       "date": "2026-08-06",
@@ -309,7 +520,15 @@
       "sell_yen": 337.44,
       "buy_yen": -397.16,
       "sell_yen_per_day": 112.48,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4869"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4869",
+      "usdtry_rep_rate": 47.58979988,
+      "usdjpy_rep_rate": 157.86750031,
+      "tryjpy_rep_rate": 3.31725497,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.02305031,
+      "fx_pnl_jpy_total": -76.463755,
+      "fx_pnl_jpy_per_day": -25.487918
     },
     {
       "date": "2026-08-07",
@@ -320,7 +539,15 @@
       "sell_yen": 112.23,
       "buy_yen": -132.04,
       "sell_yen_per_day": 112.23,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4870"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4870",
+      "usdtry_rep_rate": 47.69659996,
+      "usdjpy_rep_rate": 158.32299805,
+      "tryjpy_rep_rate": 3.31937702,
+      "usdtry_rate_samples": 22,
+      "usdjpy_rate_samples": 21,
+      "usdtry_change": 0.10680008,
+      "fx_pnl_jpy_total": -354.509731,
+      "fx_pnl_jpy_per_day": -354.509731
     },
     {
       "date": "2026-08-10",
@@ -331,7 +558,15 @@
       "sell_yen": 112.23,
       "buy_yen": -132.04,
       "sell_yen_per_day": 112.23,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4871"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4871",
+      "usdtry_rep_rate": 47.70971489,
+      "usdjpy_rep_rate": 158.86949921,
+      "tryjpy_rep_rate": 3.32991927,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01311493,
+      "fx_pnl_jpy_total": -43.671658,
+      "fx_pnl_jpy_per_day": -43.671658
     },
     {
       "date": "2026-08-11",
@@ -342,7 +577,15 @@
       "sell_yen": 117.73,
       "buy_yen": -137.74,
       "sell_yen_per_day": 117.73,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4872"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4872",
+      "usdtry_rep_rate": 47.73320007,
+      "usdjpy_rep_rate": 159.25999451,
+      "tryjpy_rep_rate": 3.33646171,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.02348518,
+      "fx_pnl_jpy_total": -78.357404,
+      "fx_pnl_jpy_per_day": -78.357404
     },
     {
       "date": "2026-08-12",
@@ -353,7 +596,15 @@
       "sell_yen": 118.69,
       "buy_yen": -138.69,
       "sell_yen_per_day": 118.69,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4873"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4873",
+      "usdtry_rep_rate": 47.75234985,
+      "usdjpy_rep_rate": 159.37200165,
+      "tryjpy_rep_rate": 3.3374693,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01914978,
+      "fx_pnl_jpy_total": -63.911803,
+      "fx_pnl_jpy_per_day": -63.911803
     },
     {
       "date": "2026-08-13",
@@ -364,7 +615,15 @@
       "sell_yen": 356.21,
       "buy_yen": -416.08,
       "sell_yen_per_day": 118.736667,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4874"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4874",
+      "usdtry_rep_rate": 47.76989937,
+      "usdjpy_rep_rate": 159.36799622,
+      "tryjpy_rep_rate": 3.33615935,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01754952,
+      "fx_pnl_jpy_total": -58.547995,
+      "fx_pnl_jpy_per_day": -19.515998
     },
     {
       "date": "2026-08-14",
@@ -375,7 +634,15 @@
       "sell_yen": 118.0,
       "buy_yen": -137.95,
       "sell_yen_per_day": 118.0,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4875"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4875",
+      "usdtry_rep_rate": 47.87924957,
+      "usdjpy_rep_rate": 159.27200317,
+      "tryjpy_rep_rate": 3.32653508,
+      "usdtry_rate_samples": 22,
+      "usdjpy_rate_samples": 22,
+      "usdtry_change": 0.1093502,
+      "fx_pnl_jpy_total": -363.757276,
+      "fx_pnl_jpy_per_day": -363.757276
     },
     {
       "date": "2026-08-17",
@@ -386,7 +653,15 @@
       "sell_yen": 123.69,
       "buy_yen": -143.64,
       "sell_yen_per_day": 123.69,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4876"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4876",
+      "usdtry_rep_rate": 47.89577484,
+      "usdjpy_rep_rate": 159.24200439,
+      "tryjpy_rep_rate": 3.324761,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01652527,
+      "fx_pnl_jpy_total": -54.942573,
+      "fx_pnl_jpy_per_day": -54.942573
     },
     {
       "date": "2026-08-18",
@@ -397,7 +672,15 @@
       "sell_yen": 115.81,
       "buy_yen": -135.78,
       "sell_yen_per_day": 115.81,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4877"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4877",
+      "usdtry_rep_rate": 47.91455078,
+      "usdjpy_rep_rate": 159.59700012,
+      "tryjpy_rep_rate": 3.33086709,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01877594,
+      "fx_pnl_jpy_total": -62.540161,
+      "fx_pnl_jpy_per_day": -62.540161
     },
     {
       "date": "2026-08-19",
@@ -408,7 +691,15 @@
       "sell_yen": 119.35,
       "buy_yen": -139.13,
       "sell_yen_per_day": 119.35,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4878"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4878",
+      "usdtry_rep_rate": 47.93079948,
+      "usdjpy_rep_rate": 158.84200287,
+      "tryjpy_rep_rate": 3.31398609,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.0162487,
+      "fx_pnl_jpy_total": -53.847966,
+      "fx_pnl_jpy_per_day": -53.847966
     },
     {
       "date": "2026-08-20",
@@ -419,7 +710,15 @@
       "sell_yen": 363.0,
       "buy_yen": -422.51,
       "sell_yen_per_day": 121.0,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4879"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4879",
+      "usdtry_rep_rate": 47.94709969,
+      "usdjpy_rep_rate": 158.64599609,
+      "tryjpy_rep_rate": 3.30877148,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01630021,
+      "fx_pnl_jpy_total": -53.93367,
+      "fx_pnl_jpy_per_day": -17.97789
     },
     {
       "date": "2026-08-21",
@@ -430,7 +729,15 @@
       "sell_yen": 123.16,
       "buy_yen": -142.98,
       "sell_yen_per_day": 123.16,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4880"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4880",
+      "usdtry_rep_rate": 48.05559921,
+      "usdjpy_rep_rate": 158.9280014,
+      "tryjpy_rep_rate": 3.30716928,
+      "usdtry_rate_samples": 22,
+      "usdjpy_rate_samples": 22,
+      "usdtry_change": 0.10849952,
+      "fx_pnl_jpy_total": -358.826279,
+      "fx_pnl_jpy_per_day": -358.826279
     },
     {
       "date": "2026-08-24",
@@ -441,7 +748,15 @@
       "sell_yen": 129.63,
       "buy_yen": -149.48,
       "sell_yen_per_day": 129.63,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4881"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4881",
+      "usdtry_rep_rate": 48.07259941,
+      "usdjpy_rep_rate": 159.08449554,
+      "tryjpy_rep_rate": 3.30925512,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.0170002,
+      "fx_pnl_jpy_total": -56.257999,
+      "fx_pnl_jpy_per_day": -56.257999
     },
     {
       "date": "2026-08-25",
@@ -452,7 +767,15 @@
       "sell_yen": 130.34,
       "buy_yen": -150.18,
       "sell_yen_per_day": 130.34,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4882"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4882",
+      "usdtry_rep_rate": 48.08914948,
+      "usdjpy_rep_rate": 159.26050568,
+      "tryjpy_rep_rate": 3.3117763,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01655007,
+      "fx_pnl_jpy_total": -54.81013,
+      "fx_pnl_jpy_per_day": -54.81013
     },
     {
       "date": "2026-08-26",
@@ -463,7 +786,15 @@
       "sell_yen": 106.95,
       "buy_yen": -126.81,
       "sell_yen_per_day": 106.95,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4883"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4883",
+      "usdtry_rep_rate": 48.11215019,
+      "usdjpy_rep_rate": 159.1969986,
+      "tryjpy_rep_rate": 3.30887308,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.02300071,
+      "fx_pnl_jpy_total": -76.10643,
+      "fx_pnl_jpy_per_day": -76.10643
     },
     {
       "date": "2026-08-27",
@@ -474,7 +805,15 @@
       "sell_yen": 321.05,
       "buy_yen": -380.51,
       "sell_yen_per_day": 107.016667,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4884"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap?param=select&hrsCrpNo=4884",
+      "usdtry_rep_rate": 48.1303997,
+      "usdjpy_rep_rate": 159.35600281,
+      "tryjpy_rep_rate": 3.31092207,
+      "usdtry_rate_samples": 24,
+      "usdjpy_rate_samples": 24,
+      "usdtry_change": 0.01824951,
+      "fx_pnl_jpy_total": -60.422705,
+      "fx_pnl_jpy_per_day": -20.140902
     },
     {
       "date": "2026-08-28",
@@ -485,7 +824,15 @@
       "sell_yen": 108.4,
       "buy_yen": -128.29,
       "sell_yen_per_day": 108.4,
-      "source_url": "https://hirose-fx.co.jp/contents/news/Swap"
+      "source_url": "https://hirose-fx.co.jp/contents/news/Swap",
+      "usdtry_rep_rate": 48.23749924,
+      "usdjpy_rep_rate": 159.63299561,
+      "tryjpy_rep_rate": 3.30931325,
+      "usdtry_rate_samples": 23,
+      "usdjpy_rate_samples": 21,
+      "usdtry_change": 0.10709954,
+      "fx_pnl_jpy_total": -354.425927,
+      "fx_pnl_jpy_per_day": -354.425927
     }
   ]
 }
