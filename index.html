@@ -8,8 +8,8 @@
   <title>USD/TRY Swap Watch</title>
   <meta name="description" content="ヒロセ通商 LION FX の USD/TRY 売りスワップとNYクローズ基準の為替差損を円換算・1日あたりで可視化" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-  <link rel="stylesheet" href="./styles.css?v=20260831-nyclose2" />
-  <link rel="stylesheet" href="./mobile-fix.css?v=20260831-nyclose2" />
+  <link rel="stylesheet" href="./styles.css?v=20260831-return1" />
+  <link rel="stylesheet" href="./mobile-fix.css?v=20260831-return1" />
 </head>
 <body>
   <div class="ambient ambient-a"></div>
@@ -76,13 +76,13 @@
             <button class="range-btn active" data-range="all">ALL</button>
           </div>
           <button class="series-btn active fx-mode-btn" id="toggleFxMode" type="button" aria-pressed="true">FX 7AVG</button>
-          <button class="series-btn active" id="toggleMa7" type="button" aria-pressed="true">MA7 ON</button>
+          <button class="series-btn" id="toggleMa7" type="button" aria-pressed="false">MA7 OFF</button>
           <button class="download-btn" id="downloadCsv">CSV ↓</button>
         </div>
       </div>
       <div class="chart-legend">
         <span><i class="legend-dot actual"></i>スワップ / 日</span>
-        <span id="maLegend"><i class="legend-line"></i>7回移動平均</span>
+        <span id="maLegend" class="series-muted"><i class="legend-line"></i>7回移動平均</span>
         <span><i class="legend-fx"></i><b id="fxLegendText">為替差損 7日平均</b></span>
         <span><i class="legend-triple"></i>複数日付与</span>
       </div>
@@ -126,11 +126,27 @@
       </aside>
     </div>
 
+    <section class="panel chart-panel" style="margin-top:12px">
+      <div class="panel-head chart-head">
+        <div>
+          <div class="section-kicker">EXTRA · TOTAL RETURN</div>
+          <h2>USD/TRY 売スワップ込みリターン推移</h2>
+          <p class="panel-sub">レバレッジ1倍を各観測日で維持するTotal Return Index。為替損益にヒロセの実際の売スワップ受取額を加算し、3日分付与は3日分をそのまま反映します。</p>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px"><canvas id="returnChart" aria-label="USDTRY short one-times leveraged total return index"></canvas></div>
+      <div class="chart-foot">
+        <span id="returnBaseline">Index 100 = — · 1x</span>
+        <span id="returnSummary">—</span>
+      </div>
+    </section>
+
     <footer><span>USD/TRY Swap Watch</span><span id="generatedAt">—</span></footer>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="./app.js?v=20260831-prehistory1"></script>
-  <script src="./chart-enhancements.js?v=20260831-prehistory1"></script>
+  <script src="./app.js?v=20260831-return1"></script>
+  <script src="./chart-enhancements.js?v=20260831-return1"></script>
+  <script src="./return-chart.js?v=20260831-return1"></script>
 </body>
 </html>
