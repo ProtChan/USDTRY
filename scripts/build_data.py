@@ -18,7 +18,7 @@ SOURCE_CSV = f"{BASE}/swap/lionfx_swap.csv"
 YAHOO_CHART = "https://query1.finance.yahoo.com/v8/finance/chart"
 START_DATE = date(2026, 7, 1)
 OUT = Path("data/usdtry.json")
-UA = {"User-Agent": "Mozilla/5.0 USDTRY-swap-watch/1.2"}
+UA = {"User-Agent": "Mozilla/5.0 USDTRY-swap-watch/1.3"}
 DATE_RE = re.compile(r"(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日")
 
 
@@ -54,8 +54,7 @@ def parse_current_date(page_html: str) -> date:
     pair_pos = page_html.find("USD/JPY")
     prefix = page_html[:pair_pos] if pair_pos >= 0 else page_html[:12000]
     without_links = re.sub(r"<a\b[^>]*>.*?</a>", " ", prefix, flags=re.I | re.S)
-    text = strip_tags(without_links)
-    matches = DATE_RE.findall(text)
+    matches = DATE_RE.findall(strip_tags(without_links))
     if not matches:
         raise RuntimeError("Current swap date not found in Hirose page")
     y, m, d = map(int, matches[-1])
@@ -81,7 +80,6 @@ def parse_usdtry_row(page_html: str) -> dict:
     buy_points = parse_number(cells[4])
     sell_yen = parse_number(cells[5])
     buy_yen = parse_number(cells[6])
-    per_day = round(sell_yen / days, 6) if days > 0 else None
 
     return {
         "days": days,
@@ -90,13 +88,13 @@ def parse_usdtry_row(page_html: str) -> dict:
         "buy_points": buy_points,
         "sell_yen": sell_yen,
         "buy_yen": buy_yen,
-        "sell_yen_per_day": per_day,
+        "sell_yen_per_day": round(sell_yen / days, 6) if days > 0 else None,
     }
 
 
 def previous_link(page_html: str) -> tuple[date, str] | None:
-    anchor_pattern = re.compile(r"<a\s+[^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>", flags=re.I | re.S)
-    for href, body in anchor_pattern.findall(page_html):
+    pattern = re.compile(r"<a\s+[^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>", flags=re.I | re.S)
+    for href, body in pattern.findall(page_html):
         text = strip_tags(body)
         if "<<" not in text:
             continue
@@ -104,8 +102,7 @@ def previous_link(page_html: str) -> tuple[date, str] | None:
         if not match:
             continue
         y, m, d = map(int, match.groups())
-        url = urllib.parse.urljoin(BASE, html_lib.unescape(href))
-        return date(y, m, d), url
+        return date(y, m, d), urllib.parse.urljoin(BASE, html_lib.unescape(href))
     return None
 
 
@@ -126,13 +123,8 @@ def load_existing() -> dict:
 
 
 def yahoo_hourly_daily_median(symbol: str) -> dict[str, dict[str, float | int]]:
-    """Return a robust daily representative price from the median of hourly closes.
-
-    We deliberately do not use the day's high or low. Grouping is by UTC calendar
-    date so the calculation is deterministic on every Actions run.
-    """
-    # Seven-day deterioration needs a reference before the first displayed date.
-    period1 = int(datetime.combine(START_DATE - timedelta(days=12), datetime.min.time(), tzinfo=timezone.utc).timestamp())
+    """Robust daily representative price: median of hourly closes for each UTC date."""
+    period1 = int(datetime.combine(START_DATE - timedelta(days=3), datetime.min.time(), tzinfo=timezone.utc).timestamp())
     period2 = int((datetime.now(timezone.utc) + timedelta(days=1)).timestamp())
     query = urllib.parse.urlencode(
         {
@@ -144,8 +136,7 @@ def yahoo_hourly_daily_median(symbol: str) -> dict[str, dict[str, float | int]]:
         }
     )
     symbol_path = urllib.parse.quote(symbol, safe="")
-    url = f"{YAHOO_CHART}/{symbol_path}?{query}"
-    payload = json.loads(fetch_bytes(url).decode("utf-8"))
+    payload = json.loads(fetch_bytes(f"{YAHOO_CHART}/{symbol_path}?{query}").decode("utf-8"))
     result = (payload.get("chart") or {}).get("result") or []
     if not result:
         raise RuntimeError(f"Yahoo chart returned no result for {symbol}: {(payload.get('chart') or {}).get('error')}")
@@ -169,16 +160,17 @@ def yahoo_hourly_daily_median(symbol: str) -> dict[str, dict[str, float | int]]:
         raise RuntimeError(f"Yahoo chart returned no usable hourly closes for {symbol}")
 
     return {
-        day: {
-            "median": round(float(statistics.median(values)), 8),
-            "samples": len(values),
-        }
+        day: {"median": round(float(statistics.median(values)), 8), "samples": len(values)}
         for day, values in grouped.items()
         if values
     }
 
 
-def rate_on_or_before(series: dict[str, dict[str, float | int]], target: date, max_lookback: int = 4) -> tuple[str, dict[str, float | int]] | None:
+def rate_on_or_before(
+    series: dict[str, dict[str, float | int]],
+    target: date,
+    max_lookback: int = 1,
+) -> tuple[str, dict[str, float | int]] | None:
     for offset in range(max_lookback + 1):
         key = (target - timedelta(days=offset)).isoformat()
         value = series.get(key)
@@ -188,17 +180,17 @@ def rate_on_or_before(series: dict[str, dict[str, float | int]], target: date, m
 
 
 def enrich_market_rates(data: list[dict]) -> bool:
-    """Attach robust representative rates and rolling 7-day FX deterioration cost.
+    """Attach representative rates and previous-observation FX cost for USD/TRY short.
 
-    The user's intended cost model is:
-      weekly deterioration = USDTRY_now / USDTRY_7d_reference - 1
-      daily deterioration  = weekly deterioration / 7
-      JPY cost per day      = lot_USD * representative_USDJPY * daily deterioration
+    Each displayed day uses the median of that UTC day's 1-hour closes. FX cost is
+    calculated from the change versus the immediately preceding collected Hirose
+    row that has a representative USD/TRY rate.
 
-    Positive values mean FX loss/cost for a USD/TRY short; negative values mean
-    the seven-day move was favorable (FX gain). For multi-day swap accrual rows,
-    the associated total FX cost is per-day cost * accrual days, so normalizing
-    that total by accrual days returns the same daily cost.
+      delta_USDTRY = current representative rate - previous representative rate
+      loss_JPY_total = lot_USD * delta_USDTRY * current representative TRYJPY
+      loss_JPY_per_day = loss_JPY_total / Hirose accrual days
+
+    Positive = FX loss/cost for the USD/TRY short. Negative = FX gain.
     """
     try:
         usdtry = yahoo_hourly_daily_median("USDTRY=X")
@@ -208,55 +200,76 @@ def enrich_market_rates(data: list[dict]) -> bool:
         print(f"market-rate enrichment skipped: {exc}")
         return False
 
+    stale_keys = (
+        "usdtry_7d_ref_date",
+        "usdtry_7d_ref_rate",
+        "usdtry_7d_change_pct",
+        "usdtry_daily_change_pct",
+        "fx_pnl_jpy_total",
+        "fx_pnl_jpy_per_day",
+    )
+
     for row in data:
+        for key in stale_keys:
+            row.pop(key, None)
+
         day_date = date.fromisoformat(row["date"])
         current_usdtry = rate_on_or_before(usdtry, day_date, 1)
         current_usdjpy = rate_on_or_before(usdjpy, day_date, 1)
 
-        if current_usdtry and current_usdjpy:
-            usdtry_date, a = current_usdtry
-            usdjpy_date, b = current_usdjpy
-            usdtry_now = float(a["median"])
-            usdjpy_now = float(b["median"])
-            row["usdtry_rep_rate"] = usdtry_now
-            row["usdjpy_rep_rate"] = usdjpy_now
-            row["tryjpy_rep_rate"] = round(usdjpy_now / usdtry_now, 8)
-            row["usdtry_rate_date"] = usdtry_date
-            row["usdjpy_rate_date"] = usdjpy_date
-            row["usdtry_rate_samples"] = int(a["samples"])
-            row["usdjpy_rate_samples"] = int(b["samples"])
+        if not (current_usdtry and current_usdjpy):
+            row["usdtry_rep_rate"] = None
+            row["usdjpy_rep_rate"] = None
+            row["tryjpy_rep_rate"] = None
+            row["usdtry_rate_date"] = None
+            row["usdjpy_rate_date"] = None
+            row["usdtry_rate_samples"] = None
+            row["usdjpy_rate_samples"] = None
+            continue
 
-            reference = rate_on_or_before(usdtry, day_date - timedelta(days=7), 4)
-            if reference:
-                ref_date, ref = reference
-                ref_rate = float(ref["median"])
-                weekly_change = usdtry_now / ref_rate - 1.0
-                daily_change = weekly_change / 7.0
-                lot_usd = float(row.get("lot_size") or 1000)
-                fx_cost_per_day = lot_usd * usdjpy_now * daily_change
-                accrual_days = int(row.get("days") or 0)
+        usdtry_date, a = current_usdtry
+        usdjpy_date, b = current_usdjpy
+        usdtry_now = float(a["median"])
+        usdjpy_now = float(b["median"])
 
-                row["usdtry_7d_ref_date"] = ref_date
-                row["usdtry_7d_ref_rate"] = round(ref_rate, 8)
-                row["usdtry_7d_change_pct"] = round(weekly_change * 100.0, 8)
-                row["usdtry_daily_change_pct"] = round(daily_change * 100.0, 8)
-                row["fx_cost_jpy_per_day"] = round(fx_cost_per_day, 6)
-                row["fx_cost_jpy_accrual_total"] = round(fx_cost_per_day * accrual_days, 6)
-            else:
-                row["usdtry_7d_ref_date"] = None
-                row["usdtry_7d_ref_rate"] = None
-                row["usdtry_7d_change_pct"] = None
-                row["usdtry_daily_change_pct"] = None
-                row["fx_cost_jpy_per_day"] = None
-                row["fx_cost_jpy_accrual_total"] = None
-        else:
-            row["fx_cost_jpy_per_day"] = None
-            row["fx_cost_jpy_accrual_total"] = None
+        row["usdtry_rep_rate"] = usdtry_now
+        row["usdjpy_rep_rate"] = usdjpy_now
+        row["tryjpy_rep_rate"] = round(usdjpy_now / usdtry_now, 8)
+        row["usdtry_rate_date"] = usdtry_date
+        row["usdjpy_rate_date"] = usdjpy_date
+        row["usdtry_rate_samples"] = int(a["samples"])
+        row["usdjpy_rate_samples"] = int(b["samples"])
 
-        # Remove the superseded previous-day P/L fields so the JSON has one
-        # unambiguous FX-cost definition.
-        for old_key in ("usdtry_change", "fx_pnl_jpy_total", "fx_pnl_jpy_per_day"):
-            row.pop(old_key, None)
+    previous: dict | None = None
+    for row in data:
+        usdtry_now = row.get("usdtry_rep_rate")
+        tryjpy_now = row.get("tryjpy_rep_rate")
+
+        row["usdtry_prev_date"] = None
+        row["usdtry_prev_rate"] = None
+        row["usdtry_change"] = None
+        row["fx_cost_jpy_total"] = None
+        row["fx_cost_jpy_per_day"] = None
+        row["fx_cost_jpy_accrual_total"] = None
+
+        if not (isinstance(usdtry_now, (int, float)) and isinstance(tryjpy_now, (int, float))):
+            continue
+
+        if previous is not None:
+            prev_rate = float(previous["usdtry_rep_rate"])
+            delta = float(usdtry_now) - prev_rate
+            lot_usd = float(row.get("lot_size") or 1000)
+            loss_jpy_total = lot_usd * delta * float(tryjpy_now)
+            accrual_days = int(row.get("days") or 0)
+
+            row["usdtry_prev_date"] = previous["date"]
+            row["usdtry_prev_rate"] = round(prev_rate, 8)
+            row["usdtry_change"] = round(delta, 8)
+            row["fx_cost_jpy_total"] = round(loss_jpy_total, 6)
+            row["fx_cost_jpy_per_day"] = round(loss_jpy_total / accrual_days, 6) if accrual_days > 0 else None
+            row["fx_cost_jpy_accrual_total"] = round(loss_jpy_total, 6)
+
+        previous = row
 
     return True
 
@@ -265,7 +278,7 @@ def static_meta_for(data: list[dict]) -> dict:
     return {
         "pair": "USD/TRY",
         "side": "sell",
-        "description": "Hirose LION FX USD/TRY sell swap plus rolling 7-day representative-rate FX deterioration cost",
+        "description": "Hirose LION FX USD/TRY sell swap plus previous-observation representative-rate FX cost",
         "start_date": START_DATE.isoformat(),
         "latest_date": data[-1]["date"],
         "lot_size": 1000,
@@ -273,8 +286,8 @@ def static_meta_for(data: list[dict]) -> dict:
         "source_csv": SOURCE_CSV,
         "market_rate_source": "Yahoo Finance chart API: USDTRY=X and USDJPY=X",
         "market_rate_method": "UTC calendar-day median of 1-hour closing prices; daily high/low are not used",
-        "fx_cost_method": "(USDTRY representative rate / representative rate about 7 calendar days earlier - 1) / 7 * lot_USD * representative USDJPY",
-        "normalization": "swap=sell_yen/days; FX deterioration uses rolling 7-calendar-day percentage change divided by 7; multi-day accrual total=fx_cost_per_day*days",
+        "fx_cost_method": "lot_USD * (current representative USDTRY - previous collected representative USDTRY) * current representative TRYJPY; divide by Hirose accrual days",
+        "normalization": "swap=sell_yen/days; FX cost uses representative-rate change versus previous collected Hirose row and is divided by accrual days; 0-day rows have no daily value",
         "fx_cost_sign": "positive=FX loss/cost for USDTRY short, negative=FX gain",
         "records": len(data),
     }
@@ -332,7 +345,7 @@ def main() -> None:
     enriched = enrich_market_rates(data)
     if enriched:
         fx_count = sum(1 for row in data if row.get("fx_cost_jpy_per_day") is not None)
-        print(f"market-rate enrichment complete: {fx_count} rolling FX-cost observations")
+        print(f"market-rate enrichment complete: {fx_count} previous-observation FX-cost values")
 
     static_meta = static_meta_for(data)
     old_meta = existing.get("meta", {})
