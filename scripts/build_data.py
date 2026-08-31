@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import csv
 import html as html_lib
-import io
 import json
 import re
 import time
@@ -16,7 +14,8 @@ SOURCE_PAGE = f"{BASE}/contents/news/Swap"
 SOURCE_CSV = f"{BASE}/swap/lionfx_swap.csv"
 START_DATE = date(2026, 7, 1)
 OUT = Path("data/usdtry.json")
-UA = {"User-Agent": "Mozilla/5.0 (compatible; USDTRY-Swap-Watch/1.0; +https://github.com/ProtChan/USDTRY)"}
+UA = {"User-Agent": "Mozilla/5.0 USDTRY-swap-watch/1.0"}
+DATE_RE = re.compile(r"(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日")
 
 
 def fetch_bytes(url: str, attempts: int = 3) -> bytes:
@@ -26,26 +25,12 @@ def fetch_bytes(url: str, attempts: int = 3) -> bytes:
             req = urllib.request.Request(url, headers=UA)
             with urllib.request.urlopen(req, timeout=30) as response:
                 return response.read()
-        except Exception as exc:  # network retries are intentionally broad
+        except Exception as exc:
             last_error = exc
             if attempt + 1 < attempts:
-                time.sleep(1.0 + attempt)
+                time.sleep(2.0 + attempt * 2.0)
     assert last_error is not None
     raise last_error
-
-
-def latest_csv_date() -> date:
-    raw = fetch_bytes(SOURCE_CSV)
-    text = raw.decode("cp932")
-    rows = csv.reader(io.StringIO(text))
-    latest: date | None = None
-    for row in rows:
-        if not row or not re.fullmatch(r"\d{4}/\d{2}/\d{2}", row[0].strip()):
-            continue
-        latest = datetime.strptime(row[0].strip(), "%Y/%m/%d").date()
-    if latest is None:
-        raise RuntimeError("Could not determine latest date from Hirose CSV")
-    return latest
 
 
 def strip_tags(fragment: str) -> str:
@@ -59,6 +44,19 @@ def parse_number(value: str) -> float:
     if not value:
         raise ValueError("empty numeric cell")
     return float(value)
+
+
+def parse_current_date(page_html: str) -> date:
+    pair_pos = page_html.find("USD/JPY")
+    prefix = page_html[:pair_pos] if pair_pos >= 0 else page_html[:12000]
+    # Previous/next navigation dates are links. The current page date is plain text.
+    without_links = re.sub(r"<a\b[^>]*>.*?</a>", " ", prefix, flags=re.I | re.S)
+    text = strip_tags(without_links)
+    matches = DATE_RE.findall(text)
+    if not matches:
+        raise RuntimeError("Current swap date not found in Hirose page")
+    y, m, d = map(int, matches[-1])
+    return date(y, m, d)
 
 
 def parse_usdtry_row(page_html: str) -> dict:
@@ -95,12 +93,11 @@ def parse_usdtry_row(page_html: str) -> dict:
 
 def previous_link(page_html: str) -> tuple[date, str] | None:
     anchor_pattern = re.compile(r"<a\s+[^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>", flags=re.I | re.S)
-    date_pattern = re.compile(r"(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日")
     for href, body in anchor_pattern.findall(page_html):
         text = strip_tags(body)
         if "<<" not in text:
             continue
-        match = date_pattern.search(text)
+        match = DATE_RE.search(text)
         if not match:
             continue
         y, m, d = map(int, match.groups())
@@ -131,12 +128,12 @@ def main() -> None:
     existing_dates = [date.fromisoformat(d) for d in by_date]
     existing_latest = max(existing_dates) if existing_dates else None
 
-    current_date = latest_csv_date()
     current_url = SOURCE_PAGE
+    page_html = fetch_html(current_url)
+    current_date = parse_current_date(page_html)
     fetched = 0
 
     while current_date >= START_DATE:
-        page_html = fetch_html(current_url)
         values = parse_usdtry_row(page_html)
         by_date[current_date.isoformat()] = {
             "date": current_date.isoformat(),
@@ -158,13 +155,16 @@ def main() -> None:
         prev_date, prev_url = prev
         if prev_date >= current_date:
             raise RuntimeError(f"Previous link did not move backward: {current_date} -> {prev_date}")
+        if prev_date < START_DATE:
+            break
+
         current_date, current_url = prev_date, prev_url
-        time.sleep(0.12)
+        time.sleep(0.5)
+        page_html = fetch_html(current_url)
 
     data = [by_date[k] for k in sorted(by_date) if date.fromisoformat(k) >= START_DATE]
     if not data:
         raise RuntimeError("No USD/TRY data collected")
-
     if date.fromisoformat(data[0]["date"]) != START_DATE:
         raise RuntimeError(f"Backfill did not reach {START_DATE}: first={data[0]['date']}")
 
