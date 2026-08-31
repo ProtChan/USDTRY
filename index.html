@@ -8,8 +8,8 @@
   <title>USD/TRY Swap Watch</title>
   <meta name="description" content="ヒロセ通商 LION FX の USD/TRY 売りスワップとNYクローズ基準の為替差損を円換算・1日あたりで可視化" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-  <link rel="stylesheet" href="./styles.css?v=20260831-return1" />
-  <link rel="stylesheet" href="./mobile-fix.css?v=20260831-return1" />
+  <link rel="stylesheet" href="./styles.css?v=20260831-return2" />
+  <link rel="stylesheet" href="./mobile-fix.css?v=20260831-return2" />
 </head>
 <body>
   <div class="ambient ambient-a"></div>
@@ -131,10 +131,10 @@
         <div>
           <div class="section-kicker">EXTRA · TOTAL RETURN</div>
           <h2>USD/TRY 売スワップ込みリターン推移</h2>
-          <p class="panel-sub">レバレッジ1倍を各観測日で維持するTotal Return Index。為替損益にヒロセの実際の売スワップ受取額を加算し、3日分付与は3日分をそのまま反映します。</p>
+          <p class="panel-sub">レバ1倍の通常ホールドと「3日付与の木曜に決済→金曜に売り直し」を比較。回避戦略は木曜の3日分スワップを受け取らない代わりに木→金の為替損益を回避し、往復売買コスト100円 / 10,000 USDを控除します。</p>
         </div>
       </div>
-      <div class="chart-wrap" style="height:240px"><canvas id="returnChart" aria-label="USDTRY short one-times leveraged total return index"></canvas></div>
+      <div class="chart-wrap" style="height:260px"><canvas id="returnChart" aria-label="USDTRY short total return comparison"></canvas></div>
       <div class="chart-foot">
         <span id="returnBaseline">Index 100 = — · 1x</span>
         <span id="returnSummary">—</span>
@@ -145,8 +145,8 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="./app.js?v=20260831-return1"></script>
-  <script src="./chart-enhancements.js?v=20260831-return1"></script>
-  <script src="./return-chart.js?v=20260831-return1"></script>
+  <script src="./app.js?v=20260831-return2"></script>
+  <script src="./chart-enhancements.js?v=20260831-return2"></script>
+  <script src="./return-chart.js?v=20260831-return2"></script>
 </body>
 </html>
