@@ -8,35 +8,9 @@ function fxSeriesRaw() {
 }
 
 function fxSeriesRolling7() {
-  const rows = state.payload.data;
-
-  return rows.map((row, index) => {
-    const currentRate = Number(row.usdtry_rep_rate);
-    const usdJpy = Number(row.usdjpy_rep_rate);
-    if (!Number.isFinite(currentRate) || !Number.isFinite(usdJpy)) return null;
-
-    const target = new Date(`${row.date}T00:00:00Z`);
-    target.setUTCDate(target.getUTCDate() - 7);
-    const targetMs = target.getTime();
-
-    let reference = null;
-    for (let i = index - 1; i >= 0; i -= 1) {
-      const candidate = rows[i];
-      const candidateRate = Number(candidate.usdtry_rep_rate);
-      if (!Number.isFinite(candidateRate)) continue;
-      const candidateMs = new Date(`${candidate.date}T00:00:00Z`).getTime();
-      if (candidateMs <= targetMs) {
-        reference = candidate;
-        break;
-      }
-    }
-
-    if (!reference) return null;
-    const referenceRate = Number(reference.usdtry_rep_rate);
-    if (!Number.isFinite(referenceRate) || referenceRate <= 0) return null;
-
-    const sevenDayChange = currentRate / referenceRate - 1;
-    return state.qty * usdJpy * (sevenDayChange / 7);
+  return state.payload.data.map(row => {
+    const value = Number(row.fx_cost_7d_jpy_per_day);
+    return Number.isFinite(value) ? value * scale() : null;
   });
 }
 
