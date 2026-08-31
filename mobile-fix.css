@@ -43,10 +43,7 @@ canvas {
   max-width: 100% !important;
 }
 
-.table-panel {
-  overflow: hidden;
-}
-
+.table-panel { overflow: hidden; }
 .table-scroll {
   width: 100%;
   max-width: 100%;
@@ -54,6 +51,37 @@ canvas {
   overscroll-behavior-inline: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+/* Chart series controls added after the base stylesheet. */
+.series-btn {
+  border: 1px solid var(--line-strong);
+  background: rgba(255,255,255,.035);
+  color: #8599b0;
+  padding: 10px 11px;
+  border-radius: 11px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  transition: .18s ease;
+}
+.series-btn.active {
+  color: #caddff;
+  border-color: rgba(113,167,255,.32);
+  background: rgba(113,167,255,.09);
+}
+.legend-fx {
+  display: inline-block;
+  width: 17px;
+  border-top: 2px solid var(--danger);
+}
+.series-muted { opacity: .35; }
+.fx-formula {
+  background: rgba(255,143,155,.055);
+  border-color: rgba(255,143,155,.13);
+}
+.fx-formula strong { color: #ffd4d8; }
 
 @media (max-width: 820px) {
   .topbar,
@@ -67,26 +95,17 @@ canvas {
     max-width: 100%;
   }
 
-  .header-side {
-    max-width: 100%;
-  }
-
-  .chart-head {
-    width: 100%;
-  }
-
+  .header-side { max-width: 100%; }
+  .chart-head { width: 100%; }
   .chart-actions {
     max-width: 100%;
     flex-wrap: wrap;
     justify-content: flex-end;
   }
-
-  /* Keep the lower cards on the exact same content width as the cards above. */
   .lower-grid {
     grid-template-columns: minmax(0, 1fr);
     justify-items: stretch;
   }
-
   .table-panel,
   .method-panel {
     justify-self: stretch;
@@ -95,10 +114,7 @@ canvas {
 }
 
 @media (max-width: 620px) {
-  body {
-    padding: 0;
-  }
-
+  body { padding: 0; }
   .shell {
     width: auto;
     max-width: none;
@@ -122,48 +138,30 @@ canvas {
   .unit-switch,
   .range-switch,
   .chart-actions,
-  .download-btn {
-    max-width: 100%;
-  }
+  .download-btn,
+  .series-btn { max-width: 100%; }
 
-  .unit-switch {
-    width: 100%;
-  }
-
-  .unit-btn {
-    min-width: 0;
-  }
-
-  .chart-head {
-    align-items: stretch;
-  }
-
+  .unit-switch { width: 100%; }
+  .unit-btn { min-width: 0; }
+  .chart-head { align-items: stretch; }
   .chart-actions {
     width: 100%;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 7px;
   }
-
   .range-switch {
     min-width: 0;
     width: 100%;
   }
-
-  .range-btn {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .download-btn {
-    white-space: nowrap;
-  }
+  .range-btn { flex: 1; min-width: 0; }
+  .download-btn,
+  .series-btn { white-space: nowrap; }
 
   .chart-legend {
     flex-wrap: wrap;
     row-gap: 7px;
   }
-
   .chart-wrap {
     width: 100%;
     max-width: 100%;
@@ -171,117 +169,65 @@ canvas {
     margin-left: 0;
     margin-right: 0;
   }
+  .chart-foot { width: 100%; max-width: 100%; }
 
-  .chart-foot {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  /* Recent data and Method now use exactly the same outer width as upper cards. */
   .lower-grid,
   .table-panel,
-  .method-panel {
-    width: 100%;
-    max-width: 100%;
-  }
-
+  .method-panel { width: 100%; max-width: 100%; }
   .table-panel,
-  .method-panel {
-    padding-left: 14px;
-    padding-right: 14px;
-  }
+  .method-panel { padding-left: 14px; padding-right: 14px; }
 
-  /* Do not let the recent-data table create a 700px intrinsic mobile width. */
   .table-scroll {
     margin-left: 0;
     margin-right: 0;
     overflow-x: hidden;
   }
-
   table {
     width: 100%;
     min-width: 0;
     max-width: 100%;
     table-layout: fixed;
   }
-
-  /* Mobile summary: date / days / daily swap / change. Less important raw fields stay on desktop. */
   table th:nth-child(3),
   table td:nth-child(3),
   table th:nth-child(4),
-  table td:nth-child(4) {
-    display: none;
-  }
-
+  table td:nth-child(4) { display: none; }
   table th,
   table td {
     padding-left: 5px;
     padding-right: 5px;
     white-space: nowrap;
   }
-
-  table th:nth-child(1),
-  table td:nth-child(1) { width: 31%; }
-  table th:nth-child(2),
-  table td:nth-child(2) { width: 14%; }
-  table th:nth-child(5),
-  table td:nth-child(5) { width: 34%; }
-  table th:nth-child(6),
-  table td:nth-child(6) { width: 21%; }
+  table th:nth-child(1), table td:nth-child(1) { width: 31%; }
+  table th:nth-child(2), table td:nth-child(2) { width: 14%; }
+  table th:nth-child(5), table td:nth-child(5) { width: 34%; }
+  table th:nth-child(6), table td:nth-child(6) { width: 21%; }
 
   .method-panel p,
   .method-list dd,
-  .formula strong {
-    overflow-wrap: anywhere;
-  }
-
-  .method-list div {
-    min-width: 0;
-  }
-
+  .formula strong { overflow-wrap: anywhere; }
+  .method-list div { min-width: 0; }
   .hero-value,
   .change-value,
-  .kpi-value {
-    max-width: 100%;
-    overflow-wrap: anywhere;
-  }
-
-  footer {
-    overflow-wrap: anywhere;
-  }
+  .kpi-value { max-width: 100%; overflow-wrap: anywhere; }
+  footer { overflow-wrap: anywhere; }
 }
 
 @media (max-width: 390px) {
-  .shell {
-    margin-left: 7px;
-    margin-right: 7px;
-  }
-
+  .shell { margin-left: 7px; margin-right: 7px; }
   .hero-kpi,
   .chart-panel,
   .table-panel,
-  .method-panel {
-    border-radius: 16px;
-  }
+  .method-panel { border-radius: 16px; }
 
-  .chart-actions {
-    grid-template-columns: 1fr;
-  }
+  .chart-actions { grid-template-columns: 1fr 1fr; }
+  .range-switch { grid-column: 1 / -1; }
+  .series-btn,
+  .download-btn { width: 100%; }
 
-  .download-btn {
-    width: 100%;
-  }
-
-  /* On very narrow screens, keep the table as a compact 3-column card. */
   table th:nth-child(6),
-  table td:nth-child(6) {
-    display: none;
-  }
-
-  table th:nth-child(1),
-  table td:nth-child(1) { width: 38%; }
-  table th:nth-child(2),
-  table td:nth-child(2) { width: 17%; }
-  table th:nth-child(5),
-  table td:nth-child(5) { width: 45%; }
+  table td:nth-child(6) { display: none; }
+  table th:nth-child(1), table td:nth-child(1) { width: 38%; }
+  table th:nth-child(2), table td:nth-child(2) { width: 17%; }
+  table th:nth-child(5), table td:nth-child(5) { width: 45%; }
 }
