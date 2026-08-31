@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#07111f" />
+  <title>USD/TRY Swap Watch</title>
+  <meta name="description" content="ヒロセ通商 LION FX の USD/TRY 売りスワップを円換算・1日あたりで可視化" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow"><span class="pulse"></span> HIROSE · LION FX</div>
+        <h1>USD/TRY <span>Swap Watch</span></h1>
+        <p class="lead">売りスワップを、ヒロセ通商の円換算値から<strong>1日あたり</strong>に正規化。</p>
+      </div>
+      <div class="header-side">
+        <div class="status-pill" id="statusPill">データ読込中</div>
+        <div class="unit-switch" role="group" aria-label="表示数量">
+          <button class="unit-btn active" data-qty="1000">1,000 USD</button>
+          <button class="unit-btn" data-qty="10000">10,000 USD</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="kpi-grid" aria-label="主要指標">
+      <article class="kpi primary">
+        <div class="kpi-label">LATEST · 1日あたり</div>
+        <div class="kpi-value" id="latestValue">—</div>
+        <div class="kpi-meta" id="latestMeta">—</div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-label">7 OBS AVG</div>
+        <div class="kpi-value small" id="avg7Value">—</div>
+        <div class="kpi-meta">直近7付与日の平均</div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-label">30 OBS AVG</div>
+        <div class="kpi-value small" id="avg30Value">—</div>
+        <div class="kpi-meta">直近30付与日の平均</div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-label">30D ESTIMATE</div>
+        <div class="kpi-value small" id="monthValue">—</div>
+        <div class="kpi-meta">30回平均 × 30日</div>
+      </article>
+    </section>
+
+    <section class="panel chart-panel">
+      <div class="panel-head">
+        <div>
+          <div class="section-kicker">DAILY NORMALIZED SWAP</div>
+          <h2>円換算・1日あたり推移</h2>
+        </div>
+        <div class="chart-legend">
+          <span><i class="legend-dot actual"></i>実値</span>
+          <span><i class="legend-line"></i>7回移動平均</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="swapChart" aria-label="USDTRY swap chart"></canvas>
+      </div>
+      <div class="chart-foot">
+        <span id="rangeLabel">2026/07/01 —</span>
+        <span>0日付与は日次換算不能のため線から除外</span>
+      </div>
+    </section>
+
+    <div class="lower-grid">
+      <section class="panel table-panel">
+        <div class="panel-head compact">
+          <div>
+            <div class="section-kicker">RECENT</div>
+            <h2>直近データ</h2>
+          </div>
+          <a class="source-link" href="https://hirose-fx.co.jp/contents/news/Swap" target="_blank" rel="noreferrer">公式ソース ↗</a>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>日付</th>
+                <th>日数</th>
+                <th>円換算合計</th>
+                <th>1日あたり</th>
+              </tr>
+            </thead>
+            <tbody id="recentBody">
+              <tr><td colspan="4" class="loading-cell">読み込み中…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="panel method-panel">
+        <div class="section-kicker">METHOD</div>
+        <h2>計算方法</h2>
+        <div class="formula">
+          <div>1日あたり</div>
+          <strong>売りスワップ円換算後 ÷ 付与日数</strong>
+        </div>
+        <p>ヒロセ通商の各取引日ページに掲載される USD/TRY の「売り（円換算後）」を直接取得。木曜の3日分付与などは付与日数で割って比較可能にしています。</p>
+        <dl class="method-list">
+          <div><dt>開始</dt><dd>2026/07/01</dd></div>
+          <div><dt>基準Lot</dt><dd>1,000 USD</dd></div>
+          <div><dt>更新</dt><dd>GitHub Actions / 毎営業日</dd></div>
+          <div><dt>対象</dt><dd>USD/TRY 売り</dd></div>
+        </dl>
+        <a class="repo-link" href="https://github.com/ProtChan/USDTRY" target="_blank" rel="noreferrer">GitHub repository ↗</a>
+      </aside>
+    </div>
+
+    <footer>
+      <span>USD/TRY Swap Watch</span>
+      <span id="generatedAt">—</span>
+    </footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
