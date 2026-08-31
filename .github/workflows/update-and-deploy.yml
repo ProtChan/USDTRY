@@ -31,6 +31,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Validate scraper and chart code
+        run: |
+          python -m py_compile scripts/build_data.py
+          node --check app.js
+
       - name: Fetch Hirose USDTRY swap
         run: python scripts/build_data.py
 
