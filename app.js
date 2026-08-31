@@ -46,8 +46,8 @@ function scaledPerDay(row) {
   return row?.sell_yen_per_day == null ? null : row.sell_yen_per_day * scale();
 }
 
-function scaledFxPnl(row) {
-  return row?.fx_pnl_jpy_per_day == null ? null : row.fx_pnl_jpy_per_day * scale();
+function scaledFxCost(row) {
+  return row?.fx_cost_jpy_per_day == null ? null : row.fx_cost_jpy_per_day * scale();
 }
 
 function validRows() {
@@ -172,7 +172,7 @@ function niceStep(target) {
 function stableAxisBounds() {
   const values = [
     ...state.payload.data.map(scaledPerDay).filter(Number.isFinite),
-    ...state.payload.data.map(scaledFxPnl).filter(Number.isFinite),
+    ...state.payload.data.map(scaledFxCost).filter(Number.isFinite),
     0,
   ];
   const rawMin = Math.min(...values);
@@ -198,7 +198,7 @@ function buildChart() {
   const allActual = allRows.map(scaledPerDay);
   const actual = allActual.slice(startIndex);
   const ma7 = movingAverage(allActual, 7).slice(startIndex);
-  const fxPnl = allRows.map(scaledFxPnl).slice(startIndex);
+  const fxCost = allRows.map(scaledFxCost).slice(startIndex);
   const multiDay = rows.map(row => row.days >= 2 ? scaledPerDay(row) : null);
   const axis = stableAxisBounds();
 
@@ -219,8 +219,8 @@ function buildChart() {
         borderDash: [5, 4], borderWidth: 1.45, tension: .2, fill: false, spanGaps: true, hidden: !state.showMa7,
       },
       {
-        label: '為替損益 / 日', data: fxPnl, borderColor: '#ff8f9b', backgroundColor: 'transparent',
-        pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 12, borderWidth: 1.8, tension: .16, fill: false, spanGaps: true,
+        label: '7日平均 為替差損 / 日', data: fxCost, borderColor: '#ff9d7a', backgroundColor: 'transparent',
+        pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 12, borderWidth: 1.9, tension: .16, fill: false, spanGaps: true,
       },
       {
         label: '複数日付与', data: multiDay, showLine: false, pointRadius: 4.1, pointHoverRadius: 5.4,
@@ -239,12 +239,17 @@ function buildChart() {
             title(items) { return jpDate(labels[items[0].dataIndex]); },
             label(context) {
               if (context.raw == null) return `${context.dataset.label}: —`;
-              const prefix = context.datasetIndex === 2 && context.raw > 0 ? '+' : '';
-              return `${context.dataset.label}: ${prefix}${yen.format(context.raw)} 円`;
+              if (context.datasetIndex === 2) {
+                const label = context.raw >= 0 ? '為替差損コスト / 日' : '為替差益相当 / 日';
+                return `${label}: ${yen.format(Math.abs(context.raw))} 円`;
+              }
+              return `${context.dataset.label}: ${yen.format(context.raw)} 円`;
             },
             afterBody(items) {
               const row = rows[items[0].dataIndex];
               const detail = [`付与 ${row.days}日 · スワップ合計 ${yen.format(row.sell_yen * scale())}円`];
+              if (Number.isFinite(row.usdtry_7d_change_pct)) detail.push(`7日USD/TRY変化 ${signed.format(row.usdtry_7d_change_pct)}%`);
+              if (Number.isFinite(row.usdtry_daily_change_pct)) detail.push(`1日換算 ${signed.format(row.usdtry_daily_change_pct)}%`);
               if (Number.isFinite(row.usdtry_rep_rate)) detail.push(`代表 USD/TRY ${row.usdtry_rep_rate.toFixed(4)}`);
               if (Number.isFinite(row.usdjpy_rep_rate)) detail.push(`代表 USD/JPY ${row.usdjpy_rep_rate.toFixed(3)}`);
               return detail;
@@ -286,8 +291,8 @@ function csvEscape(value) {
 
 function downloadCsv() {
   const s = scale();
-  const header = ['date','days','lot_usd','sell_points','sell_yen_total','swap_yen_per_day','usdtry_rep_rate','usdjpy_rep_rate','tryjpy_rep_rate','fx_pnl_yen_total','fx_pnl_yen_per_day','source_url'];
-  const rows = state.payload.data.map(row => [row.date,row.days,state.qty,row.sell_points,row.sell_yen*s,row.sell_yen_per_day==null?'':row.sell_yen_per_day*s,row.usdtry_rep_rate??'',row.usdjpy_rep_rate??'',row.tryjpy_rep_rate??'',row.fx_pnl_jpy_total==null?'':row.fx_pnl_jpy_total*s,row.fx_pnl_jpy_per_day==null?'':row.fx_pnl_jpy_per_day*s,row.source_url]);
+  const header = ['date','days','lot_usd','sell_points','sell_yen_total','swap_yen_per_day','usdtry_rep_rate','usdjpy_rep_rate','usdtry_7d_ref_date','usdtry_7d_ref_rate','usdtry_7d_change_pct','usdtry_daily_change_pct','fx_cost_yen_per_day','fx_cost_yen_accrual_total','source_url'];
+  const rows = state.payload.data.map(row => [row.date,row.days,state.qty,row.sell_points,row.sell_yen*s,row.sell_yen_per_day==null?'':row.sell_yen_per_day*s,row.usdtry_rep_rate??'',row.usdjpy_rep_rate??'',row.usdtry_7d_ref_date??'',row.usdtry_7d_ref_rate??'',row.usdtry_7d_change_pct??'',row.usdtry_daily_change_pct??'',row.fx_cost_jpy_per_day==null?'':row.fx_cost_jpy_per_day*s,row.fx_cost_jpy_accrual_total==null?'':row.fx_cost_jpy_accrual_total*s,row.source_url]);
   const csv = '\uFEFF' + [header, ...rows].map(row => row.map(csvEscape).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
