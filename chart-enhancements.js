@@ -1,5 +1,5 @@
 // Chart-focused enhancements layered on top of app.js.
-// Keeps the existing dashboard logic while making FX comparison easier to read.
+// Default FX view uses a smooth rolling 7-calendar-day deterioration rate.
 
 state.fxMode = state.fxMode || 'avg7';
 
@@ -7,16 +7,41 @@ function fxSeriesRaw() {
   return state.payload.data.map(scaledFxCost);
 }
 
-function fxSeriesAverage7(values) {
-  return values.map((_, index) => {
-    const slice = values.slice(Math.max(0, index - 6), index + 1).filter(Number.isFinite);
-    return slice.length ? mean(slice) : null;
+function fxSeriesRolling7() {
+  const rows = state.payload.data;
+
+  return rows.map((row, index) => {
+    const currentRate = Number(row.usdtry_rep_rate);
+    const usdJpy = Number(row.usdjpy_rep_rate);
+    if (!Number.isFinite(currentRate) || !Number.isFinite(usdJpy)) return null;
+
+    const target = new Date(`${row.date}T00:00:00Z`);
+    target.setUTCDate(target.getUTCDate() - 7);
+    const targetMs = target.getTime();
+
+    let reference = null;
+    for (let i = index - 1; i >= 0; i -= 1) {
+      const candidate = rows[i];
+      const candidateRate = Number(candidate.usdtry_rep_rate);
+      if (!Number.isFinite(candidateRate)) continue;
+      const candidateMs = new Date(`${candidate.date}T00:00:00Z`).getTime();
+      if (candidateMs <= targetMs) {
+        reference = candidate;
+        break;
+      }
+    }
+
+    if (!reference) return null;
+    const referenceRate = Number(reference.usdtry_rep_rate);
+    if (!Number.isFinite(referenceRate) || referenceRate <= 0) return null;
+
+    const sevenDayChange = currentRate / referenceRate - 1;
+    return state.qty * usdJpy * (sevenDayChange / 7);
   });
 }
 
 function selectedFxSeries() {
-  const raw = fxSeriesRaw();
-  return state.fxMode === 'avg7' ? fxSeriesAverage7(raw) : raw;
+  return state.fxMode === 'avg7' ? fxSeriesRolling7() : fxSeriesRaw();
 }
 
 function visibleAxisBounds(series) {
@@ -110,8 +135,9 @@ buildChart = function buildChartEnhanced() {
           pointRadius: 0,
           pointHoverRadius: 0,
           pointHitRadius: 0,
-          borderWidth: state.fxMode === 'avg7' ? 2.2 : 1.75,
-          tension: state.fxMode === 'avg7' ? .28 : .16,
+          borderWidth: state.fxMode === 'avg7' ? 2.15 : 1.75,
+          tension: state.fxMode === 'avg7' ? .30 : .16,
+          cubicInterpolationMode: state.fxMode === 'avg7' ? 'monotone' : 'default',
           fill: false,
           spanGaps: true,
         },
