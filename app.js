@@ -2,6 +2,7 @@ const state = {
   payload: null,
   qty: 1000,
   range: 'all',
+  showMa7: true,
   chart: null,
   spark: null,
 };
@@ -45,6 +46,10 @@ function scaledPerDay(row) {
   return row?.sell_yen_per_day == null ? null : row.sell_yen_per_day * scale();
 }
 
+function scaledFxPnl(row) {
+  return row?.fx_pnl_jpy_per_day == null ? null : row.fx_pnl_jpy_per_day * scale();
+}
+
 function validRows() {
   return state.payload.data.filter(row => Number.isFinite(row.sell_yen_per_day));
 }
@@ -53,10 +58,6 @@ function visibleRows() {
   const rows = state.payload.data;
   if (state.range === 'all') return rows;
   return rows.slice(-Number(state.range));
-}
-
-function latestValid(rows = state.payload.data) {
-  return [...rows].reverse().find(row => Number.isFinite(row.sell_yen_per_day)) || null;
 }
 
 function rowOnOrBefore(targetIso) {
@@ -117,8 +118,9 @@ function updateSnapshot() {
 
 function updateKpis() {
   const rows = visibleRows().filter(row => Number.isFinite(row.sell_yen_per_day));
-  const avg7 = mean(validRows().map(scaledPerDay).slice(-7));
-  const avg30 = mean(validRows().map(scaledPerDay).slice(-30));
+  const all = validRows().map(scaledPerDay);
+  const avg7 = mean(all.slice(-7));
+  const avg30 = mean(all.slice(-30));
   const high = rows.reduce((best, row) => !best || scaledPerDay(row) > scaledPerDay(best) ? row : best, null);
   const low = rows.reduce((best, row) => !best || scaledPerDay(row) < scaledPerDay(best) ? row : best, null);
 
@@ -135,7 +137,6 @@ function updateTable() {
   const body = document.getElementById('recentBody');
   const rows = [...state.payload.data].reverse().slice(0, 12);
   const chronologicalValid = validRows();
-
   body.innerHTML = rows.map(row => {
     const total = row.sell_yen * scale();
     const daily = scaledPerDay(row);
@@ -145,15 +146,7 @@ function updateTable() {
     const dailyHtml = daily == null ? '<span class="day-badge">—</span>' : `<strong>${yen.format(daily)} 円</strong>`;
     const daysHtml = row.days >= 3 ? `<span class="triple-badge">${row.days}D</span>` : `<span class="day-badge">${row.days}D</span>`;
     const deltaHtml = Number.isFinite(delta) ? `<span class="delta-mini ${classForChange(delta)}">${signed.format(delta)}</span>` : '<span class="day-badge">—</span>';
-    return `
-      <tr>
-        <td><a class="row-link" href="${row.source_url}" target="_blank" rel="noreferrer">${jpDate(row.date)}</a></td>
-        <td>${daysHtml}</td>
-        <td>${yen.format(row.sell_points)}</td>
-        <td>${yen.format(total)} 円</td>
-        <td>${dailyHtml}</td>
-        <td>${deltaHtml}</td>
-      </tr>`;
+    return `<tr><td><a class="row-link" href="${row.source_url}" target="_blank" rel="noreferrer">${jpDate(row.date)}</a></td><td>${daysHtml}</td><td>${yen.format(row.sell_points)}</td><td>${yen.format(total)} 円</td><td>${dailyHtml}</td><td>${deltaHtml}</td></tr>`;
   }).join('');
 }
 
@@ -164,28 +157,36 @@ function buildSpark(rows) {
   state.spark = new Chart(canvas, {
     type: 'line',
     data: { labels: rows.map(r => r.date), datasets: [{ data: values, borderColor: '#5ce1a7', backgroundColor: 'rgba(92,225,167,.08)', borderWidth: 2, pointRadius: 0, fill: true, tension: .28, spanGaps: true }] },
-    options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, elements: { line: { capBezierPoints: true } } }
+    options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }
   });
 }
 
-function stableAxisBounds() {
-  const values = validRows().map(scaledPerDay).filter(Number.isFinite);
-  if (!values.length) return { min: 0, max: 1, step: 1 };
+function niceStep(target) {
+  if (!Number.isFinite(target) || target <= 0) return 10;
+  const power = 10 ** Math.floor(Math.log10(target));
+  const scaled = target / power;
+  const factor = scaled <= 1 ? 1 : scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10;
+  return factor * power;
+}
 
+function stableAxisBounds() {
+  const values = [
+    ...state.payload.data.map(scaledPerDay).filter(Number.isFinite),
+    ...state.payload.data.map(scaledFxPnl).filter(Number.isFinite),
+    0,
+  ];
   const rawMin = Math.min(...values);
   const rawMax = Math.max(...values);
-  const step = state.qty >= 10000 ? 100 : 10;
-  const padding = Math.max((rawMax - rawMin) * 0.12, step * 0.5);
-  const min = Math.max(0, Math.floor((rawMin - padding) / step) * step);
-  const max = Math.ceil((rawMax + padding) / step) * step;
-
+  const span = Math.max(rawMax - rawMin, state.qty >= 10000 ? 100 : 10);
+  const step = niceStep(span / 5);
+  const min = Math.floor((rawMin - step * .7) / step) * step;
+  const max = Math.ceil((rawMax + step * .7) / step) * step;
   return { min, max: max > min ? max : min + step, step };
 }
 
 function setCompactChartHeight() {
   const wrap = document.querySelector('.chart-wrap');
-  if (!wrap) return;
-  wrap.style.height = window.matchMedia('(max-width: 620px)').matches ? '255px' : '300px';
+  if (wrap) wrap.style.height = window.matchMedia('(max-width: 620px)').matches ? '255px' : '300px';
 }
 
 function buildChart() {
@@ -193,119 +194,70 @@ function buildChart() {
   const allRows = state.payload.data;
   const rows = visibleRows();
   const labels = rows.map(row => row.date);
-  const allActual = allRows.map(scaledPerDay);
   const startIndex = Math.max(0, allRows.length - rows.length);
+  const allActual = allRows.map(scaledPerDay);
   const actual = allActual.slice(startIndex);
   const ma7 = movingAverage(allActual, 7).slice(startIndex);
-  const triple = rows.map(row => row.days >= 3 ? scaledPerDay(row) : null);
+  const fxPnl = allRows.map(scaledFxPnl).slice(startIndex);
+  const multiDay = rows.map(row => row.days >= 2 ? scaledPerDay(row) : null);
   const axis = stableAxisBounds();
 
   setCompactChartHeight();
-
   if (state.chart) state.chart.destroy();
 
   state.chart = new Chart(canvas, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: '1日あたり',
-          data: actual,
-          borderColor: '#5ce1a7',
-          backgroundColor: 'rgba(92,225,167,.045)',
-          pointBackgroundColor: '#5ce1a7',
-          pointBorderColor: '#07111f',
-          pointBorderWidth: 2,
-          pointRadius(context) {
-            const i = context.dataIndex;
-            return i === rows.length - 1 && Number.isFinite(actual[i]) ? 3.6 : 0;
-          },
-          pointHoverRadius: 4.5,
-          pointHitRadius: 12,
-          borderWidth: 2,
-          fill: true,
-          tension: .18,
-          spanGaps: true,
-        },
-        {
-          label: '7回移動平均',
-          data: ma7,
-          borderColor: '#71a7ff',
-          pointRadius: 0,
-          pointHoverRadius: 0,
-          borderDash: [5, 4],
-          borderWidth: 1.45,
-          tension: .2,
-          fill: false,
-          spanGaps: true,
-        },
-        {
-          label: '3日付与',
-          data: triple,
-          showLine: false,
-          pointRadius: 4.2,
-          pointHoverRadius: 5.5,
-          pointHitRadius: 10,
-          pointBackgroundColor: '#f6c56d',
-          pointBorderColor: '#07111f',
-          pointBorderWidth: 1.7,
-        }
-      ]
-    },
+    data: { labels, datasets: [
+      {
+        label: 'スワップ / 日', data: actual, borderColor: '#5ce1a7', backgroundColor: 'rgba(92,225,167,.035)',
+        pointBackgroundColor: '#5ce1a7', pointBorderColor: '#07111f', pointBorderWidth: 2,
+        pointRadius(ctx) { return ctx.dataIndex === rows.length - 1 && Number.isFinite(actual[ctx.dataIndex]) ? 3.6 : 0; },
+        pointHoverRadius: 4.5, pointHitRadius: 12, borderWidth: 2, fill: true, tension: .18, spanGaps: true,
+      },
+      {
+        label: '7回移動平均', data: ma7, borderColor: '#71a7ff', pointRadius: 0, pointHoverRadius: 0,
+        borderDash: [5, 4], borderWidth: 1.45, tension: .2, fill: false, spanGaps: true, hidden: !state.showMa7,
+      },
+      {
+        label: '為替損益 / 日', data: fxPnl, borderColor: '#ff8f9b', backgroundColor: 'transparent',
+        pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 12, borderWidth: 1.8, tension: .16, fill: false, spanGaps: true,
+      },
+      {
+        label: '複数日付与', data: multiDay, showLine: false, pointRadius: 4.1, pointHoverRadius: 5.4,
+        pointHitRadius: 10, pointBackgroundColor: '#f6c56d', pointBorderColor: '#07111f', pointBorderWidth: 1.7,
+      }
+    ]},
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      resizeDelay: 120,
-      normalized: true,
+      responsive: true, maintainAspectRatio: false, animation: false, resizeDelay: 120, normalized: true,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#0b1728',
-          borderColor: 'rgba(154,181,211,.18)',
-          borderWidth: 1,
-          padding: 10,
-          displayColors: false,
-          filter(item) { return item.datasetIndex !== 2 || item.raw != null; },
+          backgroundColor: '#0b1728', borderColor: 'rgba(154,181,211,.18)', borderWidth: 1, padding: 10, displayColors: false,
+          filter(item) { return item.datasetIndex !== 3; },
           callbacks: {
             title(items) { return jpDate(labels[items[0].dataIndex]); },
             label(context) {
               if (context.raw == null) return `${context.dataset.label}: —`;
-              return `${context.dataset.label}: ${yen.format(context.raw)} 円 / 日`;
+              const prefix = context.datasetIndex === 2 && context.raw > 0 ? '+' : '';
+              return `${context.dataset.label}: ${prefix}${yen.format(context.raw)} 円`;
             },
             afterBody(items) {
               const row = rows[items[0].dataIndex];
-              return [`付与 ${row.days}日 · 合計 ${yen.format(row.sell_yen * scale())}円`];
+              const detail = [`付与 ${row.days}日 · スワップ合計 ${yen.format(row.sell_yen * scale())}円`];
+              if (Number.isFinite(row.usdtry_rep_rate)) detail.push(`代表 USD/TRY ${row.usdtry_rep_rate.toFixed(4)}`);
+              if (Number.isFinite(row.usdjpy_rep_rate)) detail.push(`代表 USD/JPY ${row.usdjpy_rep_rate.toFixed(3)}`);
+              return detail;
             }
           }
         }
       },
       scales: {
-        x: {
-          grid: { display: false },
-          ticks: {
-            color: '#71849b',
-            maxRotation: 0,
-            autoSkip: true,
-            maxTicksLimit: 7,
-            padding: 5,
-            callback(value) { return shortDate(labels[value]); }
-          },
-          border: { color: 'rgba(154,181,211,.10)' }
-        },
+        x: { grid: { display: false }, ticks: { color: '#71849b', maxRotation: 0, autoSkip: true, maxTicksLimit: 7, padding: 5, callback(value) { return shortDate(labels[value]); } }, border: { color: 'rgba(154,181,211,.10)' } },
         y: {
-          min: axis.min,
-          max: axis.max,
-          grid: { color: 'rgba(154,181,211,.065)' },
-          ticks: {
-            color: '#71849b',
-            stepSize: axis.step,
-            maxTicksLimit: 6,
-            padding: 7,
-            callback(value) { return `${yen0.format(value)}円`; }
-          },
+          min: axis.min, max: axis.max,
+          grid: { color(ctx) { return ctx.tick.value === 0 ? 'rgba(245,248,252,.22)' : 'rgba(154,181,211,.065)'; } },
+          ticks: { color: '#71849b', stepSize: axis.step, maxTicksLimit: 7, padding: 7, callback(value) { return `${yen0.format(value)}円`; } },
           border: { display: false }
         }
       }
@@ -334,27 +286,17 @@ function csvEscape(value) {
 
 function downloadCsv() {
   const s = scale();
-  const header = ['date','days','lot_usd','sell_points','sell_yen_total','sell_yen_per_day','source_url'];
-  const rows = state.payload.data.map(row => [row.date, row.days, state.qty, row.sell_points, row.sell_yen * s, row.sell_yen_per_day == null ? '' : row.sell_yen_per_day * s, row.source_url]);
+  const header = ['date','days','lot_usd','sell_points','sell_yen_total','swap_yen_per_day','usdtry_rep_rate','usdjpy_rep_rate','tryjpy_rep_rate','fx_pnl_yen_total','fx_pnl_yen_per_day','source_url'];
+  const rows = state.payload.data.map(row => [row.date,row.days,state.qty,row.sell_points,row.sell_yen*s,row.sell_yen_per_day==null?'':row.sell_yen_per_day*s,row.usdtry_rep_rate??'',row.usdjpy_rep_rate??'',row.tryjpy_rep_rate??'',row.fx_pnl_jpy_total==null?'':row.fx_pnl_jpy_total*s,row.fx_pnl_jpy_per_day==null?'':row.fx_pnl_jpy_per_day*s,row.source_url]);
   const csv = '\uFEFF' + [header, ...rows].map(row => row.map(csvEscape).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = `USDTRY_swap_${state.qty}USD_${state.payload.meta.latest_date}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  a.href = url; a.download = `USDTRY_swap_fx_${state.qty}USD_${state.payload.meta.latest_date}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
-function render() {
-  updateHeader();
-  updateSnapshot();
-  updateKpis();
-  updateTable();
-  buildChart();
-}
+function render() { updateHeader(); updateSnapshot(); updateKpis(); updateTable(); buildChart(); }
 
 async function loadData() {
   try {
@@ -365,34 +307,31 @@ async function loadData() {
   } catch (error) {
     console.error(error);
     const status = document.getElementById('statusPill');
-    status.textContent = 'データ取得エラー';
-    status.className = 'status-pill error';
+    status.textContent = 'データ取得エラー'; status.className = 'status-pill error';
     document.getElementById('recentBody').innerHTML = '<tr><td colspan="6" class="loading-cell">データを読み込めませんでした</td></tr>';
   }
 }
 
-document.querySelectorAll('.unit-btn').forEach(button => {
-  button.addEventListener('click', () => {
-    state.qty = Number(button.dataset.qty);
-    document.querySelectorAll('.unit-btn').forEach(b => b.classList.toggle('active', b === button));
-    if (state.payload) render();
-  });
-});
+document.querySelectorAll('.unit-btn').forEach(button => button.addEventListener('click', () => {
+  state.qty = Number(button.dataset.qty);
+  document.querySelectorAll('.unit-btn').forEach(b => b.classList.toggle('active', b === button));
+  if (state.payload) render();
+}));
 
-document.querySelectorAll('.range-btn').forEach(button => {
-  button.addEventListener('click', () => {
-    state.range = button.dataset.range;
-    document.querySelectorAll('.range-btn').forEach(b => b.classList.toggle('active', b === button));
-    if (state.payload) {
-      updateKpis();
-      buildChart();
-    }
-  });
-});
+document.querySelectorAll('.range-btn').forEach(button => button.addEventListener('click', () => {
+  state.range = button.dataset.range;
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.toggle('active', b === button));
+  if (state.payload) { updateKpis(); buildChart(); }
+}));
 
-window.addEventListener('resize', () => {
-  setCompactChartHeight();
-  if (state.chart) state.chart.resize();
+document.getElementById('toggleMa7').addEventListener('click', event => {
+  state.showMa7 = !state.showMa7;
+  const button = event.currentTarget;
+  button.classList.toggle('active', state.showMa7);
+  button.setAttribute('aria-pressed', String(state.showMa7));
+  button.textContent = state.showMa7 ? 'MA7 ON' : 'MA7 OFF';
+  document.getElementById('maLegend').classList.toggle('series-muted', !state.showMa7);
+  if (state.payload) buildChart();
 });
 
 document.getElementById('downloadCsv').addEventListener('click', downloadCsv);
