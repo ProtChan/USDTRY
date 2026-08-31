@@ -36,6 +36,7 @@ jobs:
           python -m py_compile scripts/build_data.py scripts/align_market_day.py
           node --check app.js
           node --check chart-enhancements.js
+          node --check return-chart.js
 
       - name: Fetch Hirose USDTRY swap
         run: python scripts/build_data.py
@@ -60,7 +61,7 @@ jobs:
         run: |
           rm -rf _site
           mkdir -p _site/data
-          cp index.html styles.css mobile-fix.css app.js chart-enhancements.js _site/
+          cp index.html styles.css mobile-fix.css app.js chart-enhancements.js return-chart.js _site/
           cp data/usdtry.json _site/data/
           touch _site/.nojekyll
 
