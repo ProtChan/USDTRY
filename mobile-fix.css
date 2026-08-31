@@ -52,7 +52,6 @@ canvas {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Chart series controls added after the base stylesheet. */
 .series-btn {
   border: 1px solid var(--line-strong);
   background: rgba(255,255,255,.035);
@@ -71,11 +70,17 @@ canvas {
   border-color: rgba(113,167,255,.32);
   background: rgba(113,167,255,.09);
 }
+.fx-mode-btn.active {
+  color: #ffd8cd;
+  border-color: rgba(255,157,122,.34);
+  background: rgba(255,157,122,.09);
+}
 .legend-fx {
   display: inline-block;
   width: 17px;
-  border-top: 2px solid var(--danger);
+  border-top: 2px solid #ff9d7a;
 }
+#fxLegendText { font: inherit; font-weight: inherit; }
 .series-muted { opacity: .35; }
 .fx-formula {
   background: rgba(255,143,155,.055);
@@ -147,16 +152,23 @@ canvas {
   .chart-actions {
     width: 100%;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 7px;
   }
   .range-switch {
+    grid-column: 1 / -1;
     min-width: 0;
     width: 100%;
   }
   .range-btn { flex: 1; min-width: 0; }
   .download-btn,
-  .series-btn { white-space: nowrap; }
+  .series-btn {
+    width: 100%;
+    min-width: 0;
+    white-space: nowrap;
+    padding-left: 7px;
+    padding-right: 7px;
+  }
 
   .chart-legend {
     flex-wrap: wrap;
@@ -222,8 +234,12 @@ canvas {
 
   .chart-actions { grid-template-columns: 1fr 1fr; }
   .range-switch { grid-column: 1 / -1; }
-  .series-btn,
-  .download-btn { width: 100%; }
+  .fx-mode-btn,
+  #toggleMa7 { width: 100%; }
+  .download-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
 
   table th:nth-child(6),
   table td:nth-child(6) { display: none; }
