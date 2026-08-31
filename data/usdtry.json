@@ -14,7 +14,7 @@
     "normalization": "swap=sell_yen/days; FX cost uses NY-close-aligned representative-rate change versus previous collected Hirose row and is divided by accrual days; 0-day rows have no daily value",
     "fx_cost_sign": "positive=FX loss/cost for USDTRY short, negative=FX gain",
     "records": 43,
-    "generated_at": "2026-08-31T13:15:53+00:00",
+    "generated_at": "2026-08-31T13:20:55+00:00",
     "pages_fetched_this_run": 1,
     "market_day_boundary": "17:00 America/New_York (06:00 JST during US DST, 07:00 JST during US standard time)"
   },
