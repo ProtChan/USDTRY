@@ -234,25 +234,23 @@ function buildChart() {
         legend: { display: false },
         tooltip: {
           backgroundColor: '#0b1728', borderColor: 'rgba(154,181,211,.18)', borderWidth: 1, padding: 10, displayColors: false,
-          filter(item) { return item.datasetIndex !== 3; },
+          filter(item) { return item.datasetIndex === 0 || item.datasetIndex === 2; },
           callbacks: {
             title(items) { return jpDate(labels[items[0].dataIndex]); },
             label(context) {
-              if (context.raw == null) return `${context.dataset.label}: —`;
-              if (context.datasetIndex === 2) {
-                const label = context.raw >= 0 ? '為替差損コスト / 日' : '為替差益相当 / 日';
-                return `${label}: ${yen.format(Math.abs(context.raw))} 円`;
-              }
-              return `${context.dataset.label}: ${yen.format(context.raw)} 円`;
+              if (!Number.isFinite(context.raw)) return null;
+              if (context.datasetIndex === 0) return `スワップ: ${yen.format(context.raw)} 円 / 日`;
+              const label = context.raw >= 0 ? '為替差損' : '為替差益';
+              return `${label}: ${yen.format(Math.abs(context.raw))} 円 / 日`;
             },
             afterBody(items) {
-              const row = rows[items[0].dataIndex];
-              const detail = [`付与 ${row.days}日 · スワップ合計 ${yen.format(row.sell_yen * scale())}円`];
-              if (Number.isFinite(row.usdtry_7d_change_pct)) detail.push(`7日USD/TRY変化 ${signed.format(row.usdtry_7d_change_pct)}%`);
-              if (Number.isFinite(row.usdtry_daily_change_pct)) detail.push(`1日換算 ${signed.format(row.usdtry_daily_change_pct)}%`);
-              if (Number.isFinite(row.usdtry_rep_rate)) detail.push(`代表 USD/TRY ${row.usdtry_rep_rate.toFixed(4)}`);
-              if (Number.isFinite(row.usdjpy_rep_rate)) detail.push(`代表 USD/JPY ${row.usdjpy_rep_rate.toFixed(3)}`);
-              return detail;
+              const index = items[0].dataIndex;
+              const swap = actual[index];
+              const fx = fxCost[index];
+              if (!Number.isFinite(swap) || !Number.isFinite(fx)) return [];
+              const diff = swap - fx;
+              const prefix = diff > 0 ? '+' : '';
+              return [`差分: ${prefix}${yen.format(diff)} 円 / 日`];
             }
           }
         }
