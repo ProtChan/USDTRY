@@ -33,11 +33,15 @@ jobs:
 
       - name: Validate scraper and chart code
         run: |
-          python -m py_compile scripts/build_data.py
+          python -m py_compile scripts/build_data.py scripts/align_market_day.py
           node --check app.js
+          node --check chart-enhancements.js
 
       - name: Fetch Hirose USDTRY swap
         run: python scripts/build_data.py
+
+      - name: Align market rates to New York close
+        run: python scripts/align_market_day.py
 
       - name: Commit updated data
         run: |
@@ -56,7 +60,7 @@ jobs:
         run: |
           rm -rf _site
           mkdir -p _site/data
-          cp index.html styles.css mobile-fix.css app.js _site/
+          cp index.html styles.css mobile-fix.css app.js chart-enhancements.js _site/
           cp data/usdtry.json _site/data/
           touch _site/.nojekyll
 
