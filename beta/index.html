@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#07101d" />
+  <title>USD/TRY Carry Lab β</title>
+  <meta name="description" content="USD/TRYのスワップ、為替差損、ネット日次損益、3倍日、トータルリターンを一体で検証するベータ版ダッシュボード" />
+  <link rel="stylesheet" href="./beta.css?v=20260901-beta1" />
+</head>
+<body>
+  <div class="page-glow glow-a"></div>
+  <div class="page-glow glow-b"></div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#overview" aria-label="USDTRY Carry Lab beta home">
+        <span class="brand-mark">β</span>
+        <span><b>USD/TRY</b> Carry Lab</span>
+      </a>
+      <nav class="top-nav" aria-label="ページ内ナビゲーション">
+        <a href="#overview">Overview</a>
+        <a href="#net">Net P/L</a>
+        <a href="#triple">3× Day</a>
+        <a href="#return">Return</a>
+        <a href="#data">Data</a>
+      </nav>
+      <a class="stable-link" href="../">安定版 ↗</a>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="intro" id="overview">
+      <div>
+        <div class="eyebrow"><span class="live-dot"></span> HIROSE · LION FX · USD/TRY SHORT</div>
+        <h1>スワップを起点に、<br><span>為替差損まで見る。</span></h1>
+        <p class="intro-copy">まず知りたいスワップ額を大きく表示し、その後に為替差損を差し引いたネット損益、3倍日、実際の資産推移まで同じデータで確認します。</p>
+      </div>
+      <div class="intro-controls">
+        <div class="control-label">BROKER</div>
+        <div class="broker-switch" role="group" aria-label="ブローカー">
+          <button class="broker-btn active" type="button">Hirose</button>
+          <button class="broker-btn disabled" type="button" disabled>IG · 準備中</button>
+        </div>
+        <div class="control-label">NOTIONAL</div>
+        <div class="qty-switch" role="group" aria-label="表示数量">
+          <button class="qty-btn active" data-qty="1000" type="button">1,000 USD</button>
+          <button class="qty-btn" data-qty="10000" type="button">10,000 USD</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="overview-grid" aria-label="主要指標">
+      <article class="swap-hero card">
+        <div class="card-kicker">LATEST SWAP · PER DAY</div>
+        <div class="swap-value" id="latestSwap">—</div>
+        <div class="swap-meta" id="latestSwapMeta">データ読込中</div>
+        <div class="swap-subgrid">
+          <div><span>付与総額</span><strong id="latestSwapTotal">—</strong></div>
+          <div><span>売りポイント</span><strong id="latestSwapPoints">—</strong></div>
+        </div>
+        <div class="mini-chart"><canvas id="swapSpark" aria-label="最近のスワップ推移"></canvas></div>
+      </article>
+
+      <div class="metric-grid">
+        <article class="metric card">
+          <span>7 OBS SWAP AVG</span>
+          <strong id="swapAvg7">—</strong>
+          <small>直近7付与日の平均</small>
+        </article>
+        <article class="metric card">
+          <span>30 OBS SWAP AVG</span>
+          <strong id="swapAvg30">—</strong>
+          <small>直近30付与日の平均</small>
+        </article>
+        <article class="metric card net-emphasis">
+          <span>LATEST CONFIRMED NET</span>
+          <strong id="latestNet">—</strong>
+          <small id="latestNetMeta">スワップ − 日次為替差損</small>
+        </article>
+        <article class="metric card">
+          <span>30D NET ESTIMATE</span>
+          <strong id="net30Estimate">—</strong>
+          <small>直近30確定ネット平均 × 30日</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="freshness card" aria-label="データ鮮度">
+      <div class="freshness-main">
+        <span class="status-badge" id="statusBadge">LOADING</span>
+        <div><b id="freshnessHeadline">データを確認中</b><small id="freshnessDetail">—</small></div>
+      </div>
+      <div class="freshness-items">
+        <div><span>SWAP DATE</span><b id="freshSwapDate">—</b></div>
+        <div><span>FX INTERVAL</span><b id="freshFxStatus">—</b></div>
+        <div><span>GENERATED</span><b id="freshGenerated">—</b></div>
+        <div><span>REFRESH</span><b>平日 約5分監視</b></div>
+      </div>
+    </section>
+
+    <section class="section" id="net">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">CORE · REALIZED DAILY EDGE</div>
+          <h2>ネット日次損益</h2>
+          <p>各ヒロセ日付のスワップ/日から、同じ保有区間に整列した為替差損/日を差し引いた値。ゼロより上ならその区間はキャリーが為替悪化を上回っています。</p>
+        </div>
+        <div class="range-switch" role="group" aria-label="ネット損益の表示期間">
+          <button class="range-btn" data-range="30" type="button">30</button>
+          <button class="range-btn active" data-range="all" type="button">ALL</button>
+        </div>
+      </div>
+      <article class="chart-card card">
+        <div class="chart-wrap net-wrap"><canvas id="netChart" aria-label="ネット日次損益"></canvas></div>
+        <div class="chart-summary three" id="netSummary">
+          <div><span>平均ネット</span><b>—</b></div>
+          <div><span>プラス日</span><b>—</b></div>
+          <div><span>累計ネット</span><b>—</b></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="section carry-section">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">CARRY COMPONENTS</div>
+          <h2>スワップと為替差損</h2>
+          <p>スワップは実額の日次換算。為替側は日々のノイズを抑えた7日悪化率÷7をデフォルト表示し、キャリー水準との関係を見ます。</p>
+        </div>
+      </div>
+      <div class="carry-grid">
+        <article class="chart-card card">
+          <div class="legend-row"><span class="legend-item swap"><i></i>スワップ / 日</span><span class="legend-item fx"><i></i>為替差損 7AVG</span></div>
+          <div class="chart-wrap"><canvas id="carryChart" aria-label="スワップと為替差損"></canvas></div>
+        </article>
+        <article class="decomp card">
+          <div class="card-kicker">LATEST CONFIRMED INTERVAL</div>
+          <h3 id="decompDate">—</h3>
+          <div class="waterfall-list">
+            <div><span>Swap</span><strong class="positive" id="decompSwap">—</strong></div>
+            <div><span>FX cost</span><strong class="negative" id="decompFx">—</strong></div>
+            <div class="net-row"><span>Net</span><strong id="decompNet">—</strong></div>
+          </div>
+          <p id="decompNote">次の固定レートが揃った最新区間を表示します。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="triple">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">THURSDAY · TRIPLE SWAP</div>
+          <h2>3倍日のスワップ vs 木→金為替差損</h2>
+          <p>3日分スワップが付与された木曜だけを抽出し、その同じ木→金区間で発生した為替差損と実額で比較します。</p>
+        </div>
+      </div>
+      <article class="chart-card card">
+        <div class="chart-wrap triple-wrap"><canvas id="tripleChart" aria-label="3倍日のスワップと為替差損"></canvas></div>
+        <div class="chart-summary four" id="tripleSummary">
+          <div><span>スワップ勝ち</span><b>—</b></div>
+          <div><span>平均スワップ</span><b>—</b></div>
+          <div><span>平均FX差損</span><b>—</b></div>
+          <div><span>平均差分</span><b>—</b></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="section" id="return">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">1× TOTAL RETURN</div>
+          <h2>通常ホールド vs 木曜回避</h2>
+          <p>通常ホールドと、3倍付与木曜に決済して金曜に売り直す戦略を比較。回避戦略は3日スワップと木→金FXの両方を避け、往復100円 / 10,000 USDを控除します。</p>
+        </div>
+      </div>
+      <article class="chart-card card">
+        <div class="legend-row"><span class="legend-item hold"><i></i>通常ホールド</span><span class="legend-item dodge"><i></i>木曜回避</span></div>
+        <div class="chart-wrap return-wrap"><canvas id="returnChartBeta" aria-label="トータルリターン比較"></canvas></div>
+        <div class="chart-summary three" id="returnSummaryBeta">
+          <div><span>通常</span><b>—</b></div>
+          <div><span>木曜回避</span><b>—</b></div>
+          <div><span>差</span><b>—</b></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="section" id="data">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">DATA & METHOD</div>
+          <h2>直近データ</h2>
+          <p>スマホでも確認しやすいよう、ベータ版では固定幅テーブルではなくカード形式にしています。</p>
+        </div>
+        <a class="source-link" href="https://hirose-fx.co.jp/contents/news/Swap" target="_blank" rel="noreferrer">ヒロセ公式 ↗</a>
+      </div>
+      <div class="data-grid" id="recentCards"><div class="empty-card card">読み込み中…</div></div>
+
+      <details class="method card">
+        <summary>計算方法・データ定義を見る</summary>
+        <div class="method-body">
+          <div class="formula-grid">
+            <div><span>SWAP / DAY</span><b>売りスワップ円換算後 ÷ ヒロセ付与日数</b></div>
+            <div><span>FX DAILY</span><b>USD数量 × (次回固定USD/TRY − 当日固定USD/TRY) × 次回TRY/JPY ÷ 実カレンダー日数</b></div>
+            <div><span>NET DAILY</span><b>スワップ / 日 − FX DAILY</b></div>
+            <div><span>FX 7AVG</span><b>(当日固定USD/TRY ÷ 7日前固定USD/TRY − 1) ÷ 7 × USD数量 × USD/JPY</b></div>
+          </div>
+          <p>固定レートは毎日JST 5:00–8:59を除外し、残りの1時間足終値の中央値を使用します。FX DAILYは「当日→次のヒロセ行」の保有区間を開始日の行へ割り当てます。3倍日のFXをスワップ付与日数で1/3にはせず、実際の木→金区間として扱います。</p>
+        </div>
+      </details>
+    </section>
+
+    <section class="disclaimer card">
+      <div class="card-kicker">DISCLAIMER</div>
+      <p>本サイトは公開情報をもとにしたデータ整理・検証を目的とするものであり、特定の金融商品の売買を推奨するものではなく、投資助言を提供するものでもありません。表示値・計算結果・データ取得時刻には誤差や遅延が生じる場合があります。投資判断はご自身の責任で行ってください。</p>
+    </section>
+
+    <footer>
+      <span>USD/TRY Carry Lab β</span>
+      <span id="footerGenerated">—</span>
+    </footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="./app.js?v=20260901-beta1"></script>
+</body>
+</html>
