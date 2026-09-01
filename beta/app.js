@@ -116,6 +116,16 @@ function axisBounds(values, includeZero = false) {
   return { min, max: max > min ? max : min + step, step };
 }
 
+function returnAxisBounds(values) {
+  const xs = values.filter(Number.isFinite);
+  if (!xs.length) return { min: 99.5, max: 100.5 };
+  const rawMin = Math.min(...xs);
+  const rawMax = Math.max(...xs);
+  const span = Math.max(rawMax - rawMin, 0.35);
+  const pad = span * .14;
+  return { min: rawMin - pad, max: rawMax + pad };
+}
+
 function destroyChart(name) {
   if (state.charts[name]) state.charts[name].destroy();
   state.charts[name] = null;
@@ -510,7 +520,7 @@ function totalReturnSeries() {
   const roundTripCost = 100;
   let hold = 100;
   let dodge = 100;
-  const points = [{ date: rows[0].date, hold, dodge }];
+  const points = [{ date: rows[0].date, hold, dodge, triple: false, intervalEnd: null }];
 
   rows.forEach(row => {
     const baseLot = Number(row.lot_size || state.payload.meta?.lot_size || 1000);
@@ -524,7 +534,14 @@ function totalReturnSeries() {
     hold *= 1 + (swap - fxCost) / capital;
     const dodgeNet = triple ? -roundTripCost : swap - fxCost;
     dodge *= 1 + dodgeNet / capital;
-    points.push({ date: row.date, hold, dodge, triple, intervalEnd: row.usdtry_next_date || null });
+    points.push({
+      date: row.usdtry_next_date || row.date,
+      hold,
+      dodge,
+      triple,
+      intervalStart: row.date,
+      intervalEnd: row.usdtry_next_date || null,
+    });
   });
   return points;
 }
@@ -536,7 +553,7 @@ function buildReturnChart() {
   const labels = points.map(point => point.date);
   const hold = points.map(point => point.hold);
   const dodge = points.map(point => point.dodge);
-  const axis = axisBounds([...hold, ...dodge], false);
+  const axis = returnAxisBounds([...hold, ...dodge]);
 
   state.charts.return = new Chart(document.getElementById('returnChartBeta'), {
     type: 'line',
@@ -564,14 +581,17 @@ function buildReturnChart() {
               if (!items.length) return [];
               const point = points[items[0].dataIndex];
               if (!point?.triple) return [];
-              return [`木曜回避: 3日スワップ + 木→金FXを回避`, `往復コスト: 100円 / 10,000 USD`];
+              const interval = point.intervalStart && point.intervalEnd
+                ? `${jpDate(point.intervalStart)} → ${jpDate(point.intervalEnd)}`
+                : '木→金';
+              return [`${interval}: 3日スワップ + 木→金FXを回避`, `往復コスト: 100円 / 10,000 USD`];
             },
           },
         },
       },
       scales: {
         x: { grid: { display: false }, ticks: { color: '#677c93', maxRotation: 0, autoSkip: true, maxTicksLimit: 8, callback(value) { return shortDate(labels[value]); } }, border: { color: 'rgba(148,171,201,.10)' } },
-        y: { min: axis.min, max: axis.max, grid: { color: 'rgba(148,171,201,.06)' }, ticks: { color: '#677c93', maxTicksLimit: 7, callback(value) { return Number(value).toFixed(1); } }, border: { display: false } },
+        y: { min: axis.min, max: axis.max, grid: { color: 'rgba(148,171,201,.06)' }, ticks: { color: '#677c93', maxTicksLimit: 7, callback(value) { return Number(value).toFixed(2); } }, border: { display: false } },
       },
     },
   });
