@@ -8,8 +8,8 @@
   <title>USD/TRY Swap Watch</title>
   <meta name="description" content="ヒロセ通商 LION FX の USD/TRY 売りスワップと、早朝ロールオーバー時間を除外した固定レートベースの為替差損を比較" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-  <link rel="stylesheet" href="./styles.css?v=20260901-triplechart1" />
-  <link rel="stylesheet" href="./mobile-fix.css?v=20260901-triplechart1" />
+  <link rel="stylesheet" href="./styles.css?v=20260901-fastpoll1" />
+  <link rel="stylesheet" href="./mobile-fix.css?v=20260901-fastpoll1" />
 </head>
 <body>
   <div class="ambient ambient-a"></div>
@@ -136,7 +136,7 @@
           <div><dt>固定レート</dt><dd>JST 5–9時除外中央値</dd></div>
           <div><dt>FX割当</dt><dd>当日 → 次回を当日に計上</dd></div>
           <div><dt>デフォルトFX</dt><dd>7日悪化率 ÷ 7</dd></div>
-          <div><dt>更新</dt><dd>毎日 10:30 JST</dd></div>
+          <div><dt>更新</dt><dd>平日 5:02–13:57 JST 約5分監視 + 15:37補完</dd></div>
         </dl>
         <a class="repo-link" href="https://github.com/ProtChan/USDTRY" target="_blank" rel="noreferrer">GitHub repository ↗</a>
       </aside>
@@ -157,12 +157,17 @@
       </div>
     </section>
 
+    <section class="panel" style="margin-top:12px;padding:16px 18px">
+      <div class="section-kicker">DISCLAIMER</div>
+      <p class="panel-sub" style="margin-top:7px;line-height:1.7">本サイトは公開情報をもとにしたデータ整理・検証を目的とするものであり、特定の金融商品の売買を推奨するものではなく、投資助言を提供するものでもありません。表示値・計算結果・データ取得時刻には誤差や遅延が生じる場合があります。投資判断はご自身の責任で行ってください。</p>
+    </section>
+
     <footer><span>USD/TRY Swap Watch</span><span id="generatedAt">—</span></footer>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="./app.js?v=20260901-triplechart1"></script>
-  <script src="./chart-enhancements.js?v=20260901-triplechart1"></script>
-  <script src="./return-chart.js?v=20260901-triplechart1"></script>
+  <script src="./app.js?v=20260901-fastpoll1"></script>
+  <script src="./chart-enhancements.js?v=20260901-fastpoll1"></script>
+  <script src="./return-chart.js?v=20260901-fastpoll1"></script>
 </body>
 </html>
