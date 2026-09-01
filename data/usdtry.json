@@ -14,7 +14,7 @@
     "normalization": "swap=sell_yen/Hirose accrual days; DAILY FX cost=interval FX loss/elapsed calendar days, never divided by Hirose swap accrual days",
     "fx_cost_sign": "positive=FX loss/cost for USDTRY short, negative=FX gain",
     "records": 44,
-    "generated_at": "2026-09-01T02:53:35+00:00",
+    "generated_at": "2026-09-01T02:54:30+00:00",
     "pages_fetched_this_run": 1,
     "market_rate_history_start": "2026-06-15",
     "market_day_boundary": "JST calendar day with 05:00-08:59 excluded from representative-rate calculation",
