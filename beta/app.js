@@ -64,10 +64,33 @@ function fxAvg7(row) {
   return finite(row?.fx_cost_7d_jpy_per_day) ? Number(row.fx_cost_7d_jpy_per_day) * scale() : null;
 }
 
-function netDaily(row) {
-  const swap = swapPerDay(row);
-  const fx = fxDaily(row);
+function intervalDays(row) {
+  const days = Number(row?.fx_interval_calendar_days || 0);
+  return Number.isFinite(days) && days > 0 ? days : 1;
+}
+
+// Net bars intentionally do NOT use FX 7AVG and do NOT divide triple swap by Hirose accrual days.
+// First align the actual credited swap total with the FX total for the same forward interval,
+// then normalize the resulting interval P/L by elapsed calendar days.
+function intervalNetTotal(row) {
+  const swap = swapTotal(row);
+  const fx = fxTotal(row);
   return Number.isFinite(swap) && Number.isFinite(fx) ? swap - fx : null;
+}
+
+function alignedSwapPerCalendarDay(row) {
+  const swap = swapTotal(row);
+  return Number.isFinite(swap) ? swap / intervalDays(row) : null;
+}
+
+function alignedFxPerCalendarDay(row) {
+  const fx = fxTotal(row);
+  return Number.isFinite(fx) ? fx / intervalDays(row) : null;
+}
+
+function netPerCalendarDay(row) {
+  const net = intervalNetTotal(row);
+  return Number.isFinite(net) ? net / intervalDays(row) : null;
 }
 
 function allRows() {
@@ -75,7 +98,7 @@ function allRows() {
 }
 
 function confirmedRows() {
-  return allRows().filter(row => Number.isFinite(netDaily(row)));
+  return allRows().filter(row => Number.isFinite(intervalNetTotal(row)));
 }
 
 function visibleConfirmedRows() {
@@ -132,6 +155,7 @@ function destroyChart(name) {
 }
 
 function setTone(el, value) {
+  if (!el) return;
   el.classList.remove('positive', 'negative', 'neutral');
   el.classList.add(!Number.isFinite(value) || Math.abs(value) < .005 ? 'neutral' : value > 0 ? 'positive' : 'negative');
 }
@@ -160,6 +184,24 @@ function syncControls() {
   });
 }
 
+function monthlyNetEstimate() {
+  const rows = confirmedRows();
+  if (!rows.length) return null;
+  const latest = rows[rows.length - 1];
+  const end = new Date(`${latest.usdtry_next_date || latest.date}T00:00:00Z`);
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - 30);
+
+  const recent = rows.filter(row => {
+    const d = new Date(`${row.date}T00:00:00Z`);
+    return d >= start && d <= end;
+  });
+  if (!recent.length) return null;
+  const totalNet = recent.map(intervalNetTotal).filter(Number.isFinite).reduce((a, b) => a + b, 0);
+  const totalDays = recent.reduce((sum, row) => sum + intervalDays(row), 0);
+  return totalDays > 0 ? (totalNet / totalDays) * 30 : null;
+}
+
 function updateOverview() {
   const latest = latestSwapRow();
   if (!latest) return;
@@ -176,21 +218,22 @@ function updateOverview() {
   document.getElementById('swapAvg7').innerHTML = `${yen.format(avg7)}<small>円/日</small>`;
   document.getElementById('swapAvg30').innerHTML = `${yen.format(avg30)}<small>円/日</small>`;
 
-  const confirmed = confirmedRows();
-  const latestNetRow = confirmed[confirmed.length - 1];
-  const latestNetValue = latestNetRow ? netDaily(latestNetRow) : null;
+  const latestNetRow = latestConfirmedRow();
+  const latestNetValue = latestNetRow ? netPerCalendarDay(latestNetRow) : null;
   const latestNetEl = document.getElementById('latestNet');
-  latestNetEl.innerHTML = Number.isFinite(latestNetValue) ? `${latestNetValue > 0 ? '+' : ''}${yen.format(latestNetValue)}<small>円/日</small>` : '—';
+  latestNetEl.innerHTML = Number.isFinite(latestNetValue)
+    ? `${latestNetValue > 0 ? '+' : ''}${yen.format(latestNetValue)}<small>円/日</small>`
+    : '—';
   setTone(latestNetEl, latestNetValue);
   document.getElementById('latestNetMeta').textContent = latestNetRow
-    ? `${jpDate(latestNetRow.date)}${latestNetRow.usdtry_next_date ? ` → ${jpDate(latestNetRow.usdtry_next_date)}` : ''}`
+    ? `${jpDate(latestNetRow.date)}${latestNetRow.usdtry_next_date ? ` → ${jpDate(latestNetRow.usdtry_next_date)}` : ''} · 実付与ベース`
     : '確定区間なし';
 
-  const recentNet = confirmed.slice(-30).map(netDaily).filter(Number.isFinite);
-  const avgNet30 = mean(recentNet);
-  const estimate = Number.isFinite(avgNet30) ? avgNet30 * 30 : null;
+  const estimate = monthlyNetEstimate();
   const estimateEl = document.getElementById('net30Estimate');
-  estimateEl.innerHTML = Number.isFinite(estimate) ? `${estimate > 0 ? '+' : ''}${yen0.format(estimate)}<small>円/30日</small>` : '—';
+  estimateEl.innerHTML = Number.isFinite(estimate)
+    ? `${estimate > 0 ? '+' : ''}${yen0.format(estimate)}<small>円/30日</small>`
+    : '—';
   setTone(estimateEl, estimate);
 
   buildSwapSpark(allRows().filter(row => finite(row.sell_yen_per_day)).slice(-18));
@@ -198,9 +241,8 @@ function updateOverview() {
 
 function buildSwapSpark(rows) {
   destroyChart('spark');
-  const canvas = document.getElementById('swapSpark');
   const values = rows.map(swapPerDay);
-  state.charts.spark = new Chart(canvas, {
+  state.charts.spark = new Chart(document.getElementById('swapSpark'), {
     type: 'line',
     data: {
       labels: rows.map(row => row.date),
@@ -261,7 +303,7 @@ function buildNetChart() {
   destroyChart('net');
   const rows = visibleConfirmedRows();
   const labels = rows.map(row => row.date);
-  const values = rows.map(netDaily);
+  const values = rows.map(netPerCalendarDay);
   const axis = axisBounds(values, true);
 
   state.charts.net = new Chart(document.getElementById('netChart'), {
@@ -272,12 +314,10 @@ function buildNetChart() {
         label: 'ネット日次損益',
         data: values,
         backgroundColor(context) {
-          const value = Number(context.raw);
-          return value >= 0 ? 'rgba(98,230,173,.72)' : 'rgba(255,136,150,.72)';
+          return Number(context.raw) >= 0 ? 'rgba(98,230,173,.72)' : 'rgba(255,136,150,.72)';
         },
         borderColor(context) {
-          const value = Number(context.raw);
-          return value >= 0 ? '#62e6ad' : '#ff8896';
+          return Number(context.raw) >= 0 ? '#62e6ad' : '#ff8896';
         },
         borderWidth: 1,
         borderRadius: 4,
@@ -307,13 +347,15 @@ function buildNetChart() {
             },
             label(context) {
               const row = rows[context.dataIndex];
-              const swap = swapPerDay(row);
-              const fx = fxDaily(row);
-              const net = netDaily(row);
+              const swap = swapTotal(row);
+              const fx = fxTotal(row);
+              const net = intervalNetTotal(row);
+              const days = intervalDays(row);
               return [
-                `スワップ: ${fmtYen(swap, 2)} / 日`,
-                `${fx < 0 ? '為替差益' : '為替差損'}: ${fmtYen(Math.abs(fx), 2)} / 日`,
-                `ネット: ${fmtSignedYen(net, 2)} / 日`,
+                `実付与スワップ: ${fmtYen(swap, 2)}`,
+                `${fx < 0 ? '為替差益' : '為替差損'}: ${fmtYen(Math.abs(fx), 2)}`,
+                `区間ネット: ${fmtSignedYen(net, 2)}`,
+                `日次換算 (${days}暦日): ${fmtSignedYen(net / days, 2)} / 日`,
               ];
             },
           },
@@ -351,7 +393,7 @@ function buildNetChart() {
 
   const avg = mean(values);
   const positives = values.filter(value => Number.isFinite(value) && value > 0).length;
-  const total = values.filter(Number.isFinite).reduce((sum, value) => sum + value, 0);
+  const total = rows.map(intervalNetTotal).filter(Number.isFinite).reduce((sum, value) => sum + value, 0);
   const boxes = document.querySelectorAll('#netSummary b');
   boxes[0].textContent = fmtSignedYen(avg, 2);
   boxes[1].textContent = `${positives} / ${values.length}`;
@@ -427,9 +469,9 @@ function buildCarryChart() {
 
   const row = latestConfirmedRow();
   if (!row) return;
-  const swapValue = swapPerDay(row);
-  const fxValue = fxDaily(row);
-  const netValue = netDaily(row);
+  const swapValue = alignedSwapPerCalendarDay(row);
+  const fxValue = alignedFxPerCalendarDay(row);
+  const netValue = netPerCalendarDay(row);
   document.getElementById('decompDate').textContent = row.usdtry_next_date
     ? `${jpDate(row.date)} → ${jpDate(row.usdtry_next_date)}`
     : jpDate(row.date);
@@ -438,7 +480,7 @@ function buildCarryChart() {
   const netEl = document.getElementById('decompNet');
   netEl.textContent = fmtSignedYen(netValue, 2);
   setTone(netEl, netValue);
-  document.getElementById('decompNote').textContent = `${Number(row.fx_interval_calendar_days || 1)}暦日区間を日次化。最新未確定行は含めません。`;
+  document.getElementById('decompNote').textContent = `実付与総額と同区間FXを先に相殺し、${intervalDays(row)}暦日で日次化。7AVGは使いません。`;
 }
 
 function tripleRows() {
@@ -508,8 +550,7 @@ function buildTripleChart() {
 
 function isThursdayTriple(row) {
   if (Number(row.days || 0) < 3) return false;
-  const day = new Date(`${row.date}T12:00:00Z`).getUTCDay();
-  return day === 4;
+  return new Date(`${row.date}T12:00:00Z`).getUTCDay() === 4;
 }
 
 function totalReturnSeries() {
@@ -614,8 +655,8 @@ function updateRecentCards() {
   const rows = [...allRows()].reverse().slice(0, 12);
   target.innerHTML = rows.map(row => {
     const swap = swapPerDay(row);
-    const fx = fxDaily(row);
-    const net = netDaily(row);
+    const fx = alignedFxPerCalendarDay(row);
+    const net = netPerCalendarDay(row);
     const dayClass = Number(row.days || 0) >= 3 ? 'day-pill triple' : 'day-pill';
     const netClass = !Number.isFinite(net) ? 'neutral' : net > 0 ? 'positive' : net < 0 ? 'negative' : 'neutral';
     return `
@@ -627,15 +668,25 @@ function updateRecentCards() {
         <div class="data-values">
           <div><span>SWAP / DAY</span><b>${Number.isFinite(swap) ? fmtYen(swap, 2) : '—'}</b></div>
           <div><span>SWAP TOTAL</span><b>${Number.isFinite(swapTotal(row)) ? fmtYen(swapTotal(row), 2) : '—'}</b></div>
-          <div><span>FX / DAY</span><b>${Number.isFinite(fx) ? fmtYen(fx, 2) : '未確定'}</b></div>
-          <div><span>NET / DAY</span><b class="${netClass}">${Number.isFinite(net) ? fmtSignedYen(net, 2) : '—'}</b></div>
+          <div><span>FX / CAL DAY</span><b>${Number.isFinite(fx) ? fmtYen(fx, 2) : '未確定'}</b></div>
+          <div><span>NET / CAL DAY</span><b class="${netClass}">${Number.isFinite(net) ? fmtSignedYen(net, 2) : '—'}</b></div>
         </div>
       </article>`;
   }).join('');
 }
 
+function updateNetSectionCopy() {
+  const section = document.getElementById('net');
+  if (!section) return;
+  const heading = section.querySelector('h2');
+  const copy = section.querySelector('.section-head p');
+  if (heading) heading.textContent = 'ネット日次損益';
+  if (copy) copy.textContent = '7AVGは使わず、各ヒロセ行の実付与スワップ総額と同じ固定レート区間のFX損益を先に相殺し、その区間の実暦日数で日次化します。3倍日は3日分スワップを1/3にせず、木→金FXと総額同士で比較します。';
+}
+
 function renderAll() {
   syncControls();
+  updateNetSectionCopy();
   updateOverview();
   updateFreshness();
   buildNetChart();
