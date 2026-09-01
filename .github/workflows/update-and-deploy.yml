@@ -106,6 +106,7 @@ jobs:
           node --check chart-enhancements.js
           node --check return-chart.js
           node --check beta/app.js
+          node --check beta/net-interval.js
 
       - name: Fetch Hirose USDTRY swap
         if: steps.decision.outputs.full == 'true'
