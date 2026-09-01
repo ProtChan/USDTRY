@@ -2,8 +2,12 @@ name: Update USDTRY swap and deploy
 
 on:
   schedule:
-    # 10:30 JST every day (01:30 UTC)
-    - cron: '30 1 * * *'
+    # Fast lightweight polling around the likely post-rollover publication window.
+    # GitHub cron is UTC. These two lines cover JST Mon-Fri 05:02-13:57 every 5 minutes.
+    - cron: '2,7,12,17,22,27,32,37,42,47,52,57 20-23 * * 0-4'
+    - cron: '2,7,12,17,22,27,32,37,42,47,52,57 0-4 * * 1-5'
+    # One forced full refresh at 15:37 JST to pick up late/revised market-rate data.
+    - cron: '37 6 * * 1-5'
   workflow_dispatch:
   push:
     branches: [main]
@@ -15,23 +19,87 @@ permissions:
   pages: write
   id-token: write
 
+# A newer poll supersedes an older queued/running poll. Full runs normally finish well
+# inside the 5-minute interval, so this prevents stale polling runs from piling up.
 concurrency:
   group: usdtry-swap-site
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     outputs:
       pages_enabled: ${{ steps.pages.outputs.enabled }}
+      should_deploy: ${{ steps.decision.outputs.full }}
     steps:
       - uses: actions/checkout@v4
 
+      # Scheduled high-frequency runs first do a cheap Hirose-only probe. It imports
+      # the existing parser but does NOT call the expensive Yahoo hourly enrichment.
+      - name: Probe Hirose for a new or revised USDTRY row
+        id: probe
+        if: github.event_name == 'schedule' && github.event.schedule != '37 6 * * 1-5'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          from scripts.build_data import SOURCE_PAGE, fetch_html, load_existing, parse_current_date, parse_usdtry_row
+
+          changed = True  # fail-open: if the probe itself has trouble, run the full pipeline
+          current_date = 'unknown'
+          reason = 'probe-error'
+          try:
+              page = fetch_html(SOURCE_PAGE)
+              current_date = parse_current_date(page).isoformat()
+              live = parse_usdtry_row(page)
+              existing = load_existing()
+              by_date = {row.get('date'): row for row in existing.get('data', []) if row.get('date')}
+              old = by_date.get(current_date)
+              keys = ('days', 'lot_size', 'sell_points', 'buy_points', 'sell_yen', 'buy_yen', 'sell_yen_per_day')
+              changed = old is None or any(old.get(key) != live.get(key) for key in keys)
+              reason = 'new-or-revised-row' if changed else 'unchanged'
+          except Exception as exc:
+              print(f'probe failed; forcing full refresh: {exc}')
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as out:
+              out.write(f'changed={str(changed).lower()}\n')
+              out.write(f'current_date={current_date}\n')
+              out.write(f'reason={reason}\n')
+          print(f'Hirose probe: date={current_date} changed={changed} reason={reason}')
+          PY
+
+      - name: Decide whether a full refresh is needed
+        id: decision
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE_EXPR: ${{ github.event.schedule }}
+          PROBE_CHANGED: ${{ steps.probe.outputs.changed }}
+        run: |
+          full=false
+          reason="scheduled-no-change"
+          if [ "$EVENT_NAME" != "schedule" ]; then
+            full=true
+            reason="push-or-manual"
+          elif [ "$SCHEDULE_EXPR" = "37 6 * * 1-5" ]; then
+            full=true
+            reason="forced-afternoon-refresh"
+          elif [ "$PROBE_CHANGED" = "true" ]; then
+            full=true
+            reason="hirose-changed"
+          fi
+          echo "full=$full" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+          echo "Refresh decision: full=$full reason=$reason"
+
       - uses: actions/setup-python@v5
+        if: steps.decision.outputs.full == 'true'
         with:
           python-version: '3.12'
 
       - name: Validate scraper and chart code
+        if: steps.decision.outputs.full == 'true'
         run: |
           python -m py_compile scripts/build_data.py scripts/align_market_day.py
           node --check app.js
@@ -39,12 +107,15 @@ jobs:
           node --check return-chart.js
 
       - name: Fetch Hirose USDTRY swap
+        if: steps.decision.outputs.full == 'true'
         run: python scripts/build_data.py
 
-      - name: Align market rates to New York close
+      - name: Align fixed market rates and FX intervals
+        if: steps.decision.outputs.full == 'true'
         run: python scripts/align_market_day.py
 
       - name: Commit updated data
+        if: steps.decision.outputs.full == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -58,6 +129,7 @@ jobs:
           fi
 
       - name: Build static site
+        if: steps.decision.outputs.full == 'true'
         run: |
           rm -rf _site
           mkdir -p _site/data
@@ -66,6 +138,7 @@ jobs:
           touch _site/.nojekyll
 
       - name: Check or enable GitHub Pages
+        if: steps.decision.outputs.full == 'true'
         id: pages
         env:
           GH_TOKEN: ${{ github.token }}
@@ -76,7 +149,6 @@ jobs:
           code=$(curl -sS -o /tmp/pages.json -w "%{http_code}" "${headers[@]}" "$api")
           if [ "$code" = "200" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
-            cat /tmp/pages.json
             exit 0
           fi
 
@@ -94,17 +166,17 @@ jobs:
           fi
 
       - name: Configure Pages
-        if: steps.pages.outputs.enabled == 'true'
+        if: steps.decision.outputs.full == 'true' && steps.pages.outputs.enabled == 'true'
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
-        if: steps.pages.outputs.enabled == 'true'
+        if: steps.decision.outputs.full == 'true' && steps.pages.outputs.enabled == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
   deploy:
-    if: needs.build.outputs.pages_enabled == 'true'
+    if: needs.build.outputs.should_deploy == 'true' && needs.build.outputs.pages_enabled == 'true'
     needs: build
     runs-on: ubuntu-latest
     environment:
