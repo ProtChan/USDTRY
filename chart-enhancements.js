@@ -1,5 +1,6 @@
 // Chart-focused enhancements layered on top of app.js.
 // Default FX view uses a smooth rolling 7-calendar-day deterioration rate.
+// FX DAILY aligns each forward FX interval to the same starting Hirose swap row.
 
 state.fxMode = state.fxMode || 'avg7';
 
@@ -56,10 +57,14 @@ buildChart = function buildChartEnhanced() {
   const ma7 = movingAverage(allSwap, 7).slice(startIndex);
   const allFx = selectedFxSeries();
   const fx = allFx.slice(startIndex);
-  const multiDay = rows.map(row => row.days >= 2 ? scaledPerDay(row) : null);
+  const multiDay = rows.map(row => {
+    if (Number(row.days || 0) < 2) return null;
+    return state.fxMode === 'daily' ? Number(row.sell_yen) * scale() : scaledPerDay(row);
+  });
 
   const axisSeries = [swap, fx];
   if (state.showMa7) axisSeries.push(ma7);
+  if (state.fxMode === 'daily') axisSeries.push(multiDay);
   const axis = visibleAxisBounds(axisSeries);
 
   setCompactChartHeight();
@@ -116,11 +121,11 @@ buildChart = function buildChartEnhanced() {
           spanGaps: true,
         },
         {
-          label: '複数日付与',
+          label: state.fxMode === 'daily' ? '複数日スワップ実額' : '複数日付与',
           data: multiDay,
           showLine: false,
-          pointRadius: 4.1,
-          pointHoverRadius: 4.1,
+          pointRadius: 4.4,
+          pointHoverRadius: 4.4,
           pointHitRadius: 0,
           pointBackgroundColor: '#f6c56d',
           pointBorderColor: '#07111f',
@@ -156,13 +161,31 @@ buildChart = function buildChartEnhanced() {
             },
             label(context) {
               const i = context.dataIndex;
+              const row = rows[i];
               const swapValue = swap[i];
               const fxValue = fx[i];
+
+              if (state.fxMode === 'daily' && Number(row.days || 0) >= 2) {
+                const swapTotal = Number(row.sell_yen) * scale();
+                const fxTotal = Number(row.fx_cost_jpy_total) * scale();
+                const interval = row.usdtry_next_date ? `${shortDate(row.date)}→${shortDate(row.usdtry_next_date)}` : '次回まで';
+                const netTotal = Number.isFinite(swapTotal) && Number.isFinite(fxTotal) ? swapTotal - fxTotal : null;
+                return [
+                  `スワップ: ${yen.format(swapValue)}円/日 × ${row.days}日`,
+                  `${row.days}日スワップ実額: ${yen.format(swapTotal)}円`,
+                  `${interval} 為替差損: ${Number.isFinite(fxTotal) ? yen.format(Math.abs(fxTotal)) + '円' : '—'}`,
+                  `実額差引: ${Number.isFinite(netTotal) ? (netTotal > 0 ? '+' : '') + yen.format(netTotal) + '円' : '—'}`,
+                ];
+              }
+
               const diff = Number.isFinite(swapValue) && Number.isFinite(fxValue) ? swapValue - fxValue : null;
               const fxLabel = Number.isFinite(fxValue) && fxValue < 0 ? '為替差益' : '為替差損';
+              const intervalLabel = state.fxMode === 'daily' && row.usdtry_next_date
+                ? ` (${shortDate(row.date)}→${shortDate(row.usdtry_next_date)})`
+                : '';
               return [
                 `スワップ: ${Number.isFinite(swapValue) ? yen.format(swapValue) + '円/日' : '—'}`,
-                `${fxLabel}: ${Number.isFinite(fxValue) ? yen.format(Math.abs(fxValue)) + '円/日' : '—'}`,
+                `${fxLabel}${intervalLabel}: ${Number.isFinite(fxValue) ? yen.format(Math.abs(fxValue)) + '円/日' : '—'}`,
                 `差分: ${Number.isFinite(diff) ? (diff > 0 ? '+' : '') + yen.format(diff) + '円/日' : '—'}`,
               ];
             },
@@ -204,7 +227,7 @@ buildChart = function buildChartEnhanced() {
 
   const first = rows[0]?.date || state.payload.meta.start_date;
   const last = rows[rows.length - 1]?.date || state.payload.meta.latest_date;
-  const mode = state.fxMode === 'avg7' ? 'FX 7日平均' : 'FX 日次';
+  const mode = state.fxMode === 'avg7' ? 'FX 7日平均' : 'FX 日次 · 区間整列';
   document.getElementById('rangeLabel').textContent = `${jpDate(first)} — ${jpDate(last)} · ${mode}`;
   updateFxModeUi();
 };
