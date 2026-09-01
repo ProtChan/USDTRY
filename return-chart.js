@@ -6,6 +6,7 @@ state.showMa7 = false;
 state.returnChart = null;
 state.tripleDayChart = null;
 
+const RETURN_BENCHMARK_USD = 10000;
 const ROUND_TRIP_COST_PER_10000_USD = 100;
 
 const maButtonOnLoad = document.getElementById('toggleMa7');
@@ -106,6 +107,7 @@ function buildTripleDayChart() {
           borderWidth: 1,
           padding: 9,
           displayColors: false,
+          filter(item) { return item.datasetIndex === 0; },
           callbacks: {
             title(items) {
               if (!items.length) return '';
@@ -115,7 +117,6 @@ function buildTripleDayChart() {
                 : jpDate(row.date);
             },
             label(context) {
-              if (context.datasetIndex !== 0) return '';
               const i = context.dataIndex;
               const swap = swapTotals[i];
               const fx = fxTotals[i];
@@ -131,7 +132,6 @@ function buildTripleDayChart() {
             afterBody() { return []; },
             footer() { return ''; },
           },
-          filter(item) { return item.datasetIndex === 0; },
         },
       },
       scales: {
@@ -201,28 +201,27 @@ function totalReturnComparison() {
   }];
 
   rows.forEach(row => {
-    const lotUsd = Number(row.lot_size || state.payload.meta?.lot_size || 1000);
+    const sourceLotUsd = Number(row.lot_size || state.payload.meta?.lot_size || 1000);
     const usdJpy = Number(row.usdjpy_rep_rate);
-    const swapJpy = Number(row.sell_yen);
-    const fxCostJpy = row.fx_cost_jpy_total == null ? NaN : Number(row.fx_cost_jpy_total);
-    if (!Number.isFinite(lotUsd) || lotUsd <= 0 || !Number.isFinite(usdJpy) || usdJpy <= 0) return;
-    if (!Number.isFinite(swapJpy) || !Number.isFinite(fxCostJpy)) return;
+    const sourceSwapJpy = Number(row.sell_yen);
+    const sourceFxCostJpy = row.fx_cost_jpy_total == null ? NaN : Number(row.fx_cost_jpy_total);
+    if (!Number.isFinite(sourceLotUsd) || sourceLotUsd <= 0 || !Number.isFinite(usdJpy) || usdJpy <= 0) return;
+    if (!Number.isFinite(sourceSwapJpy) || !Number.isFinite(sourceFxCostJpy)) return;
 
-    const referenceCapitalJpy = lotUsd * usdJpy;
+    // Normalize every cash flow to an explicit 10,000 USD benchmark. This leaves the
+    // 1x index mathematically unchanged, but keeps the stated round-trip cost at 100 JPY.
+    const benchmarkScale = RETURN_BENCHMARK_USD / sourceLotUsd;
+    const swapJpy = sourceSwapJpy * benchmarkScale;
+    const fxCostJpy = sourceFxCostJpy * benchmarkScale;
+    const referenceCapitalJpy = RETURN_BENCHMARK_USD * usdJpy;
     const fxPnlJpy = -fxCostJpy;
 
-    // Normal 1x short: same Hirose row = credited swap + that row's forward FX move.
     const holdNetPnlJpy = swapJpy + fxPnlJpy;
     holdIndex *= 1 + holdNetPnlJpy / referenceCapitalJpy;
 
-    // Thursday -> Friday dodge: on a Thursday carrying 3+ days of swap, close before
-    // the rollover and re-enter after the Thu->Fri move. Because FX is now aligned to
-    // the Thursday row, both the triple swap and Thu->Fri FX move are skipped HERE.
     const skippedTripleSwap = isThursdayTriple(row);
     const avoidedFx = skippedTripleSwap;
-    const tradeCostJpy = skippedTripleSwap
-      ? (lotUsd / 10000) * ROUND_TRIP_COST_PER_10000_USD
-      : 0;
+    const tradeCostJpy = skippedTripleSwap ? ROUND_TRIP_COST_PER_10000_USD : 0;
     const dodgeSwapJpy = skippedTripleSwap ? 0 : swapJpy;
     const dodgeFxPnlJpy = avoidedFx ? 0 : fxPnlJpy;
     const dodgeNetPnlJpy = dodgeSwapJpy + dodgeFxPnlJpy - tradeCostJpy;
@@ -345,7 +344,10 @@ function buildReturnChart() {
               const point = points[items[0].dataIndex];
               if (point.skippedTripleSwap) {
                 const interval = point.intervalEndDate ? `${jpDate(point.date)}→${jpDate(point.intervalEndDate)}` : '木→金';
-                return [`回避戦略: ${interval} FX + 3日分スワップを同時回避`, `売買コスト ${point.tradeCostJpy.toFixed(0)}円`];
+                return [
+                  `回避戦略: ${interval} FX + 3日分スワップを同時回避`,
+                  `売買コスト ${point.tradeCostJpy.toFixed(0)}円 / 10,000 USD`,
+                ];
               }
               return [];
             },
