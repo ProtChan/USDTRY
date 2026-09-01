@@ -51,7 +51,7 @@ function totalReturnComparison() {
     const lotUsd = Number(row.lot_size || state.payload.meta?.lot_size || 1000);
     const usdJpy = Number(row.usdjpy_rep_rate);
     const swapJpy = Number(row.sell_yen);
-    const fxCostJpy = Number(row.fx_cost_jpy_total);
+    const fxCostJpy = row.fx_cost_jpy_total == null ? NaN : Number(row.fx_cost_jpy_total);
     if (!Number.isFinite(lotUsd) || lotUsd <= 0 || !Number.isFinite(usdJpy) || usdJpy <= 0) return;
     if (!Number.isFinite(swapJpy) || !Number.isFinite(fxCostJpy)) return;
 
