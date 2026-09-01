@@ -1,9 +1,10 @@
-// Bonus total-return comparison for a 1x USD/TRY short with Hirose sell swap included.
-// Every row now represents one holding interval starting on that Hirose date. Therefore
+// Bonus charts: triple-swap comparison and 1x total-return comparison.
+// Every row represents one holding interval starting on that Hirose date. Therefore
 // a Thursday triple-swap row also contains the Thursday->Friday FX move on the same x.
 
 state.showMa7 = false;
 state.returnChart = null;
+state.tripleDayChart = null;
 
 const ROUND_TRIP_COST_PER_10000_USD = 100;
 
@@ -22,6 +23,158 @@ function utcWeekday(iso) {
 
 function isThursdayTriple(row) {
   return utcWeekday(row.date) === 4 && Number(row.days || 0) >= 3;
+}
+
+function tripleDayRows() {
+  if (!state.payload?.data?.length) return [];
+  return state.payload.data.filter(row =>
+    Number(row.days || 0) === 3 &&
+    Number.isFinite(Number(row.sell_yen)) &&
+    row.fx_cost_jpy_total != null &&
+    Number.isFinite(Number(row.fx_cost_jpy_total))
+  );
+}
+
+function buildTripleDayChart() {
+  const canvas = document.getElementById('tripleDayChart');
+  if (!canvas || !state.payload) return;
+
+  const rows = tripleDayRows();
+  if (!rows.length) return;
+
+  const labels = rows.map(row => row.date);
+  const swapTotals = rows.map(row => Number(row.sell_yen) * scale());
+  const fxTotals = rows.map(row => Number(row.fx_cost_jpy_total) * scale());
+  const all = [...swapTotals, ...fxTotals].filter(Number.isFinite);
+  const rawMin = Math.min(...all, 0);
+  const rawMax = Math.max(...all, 0);
+  const span = Math.max(rawMax - rawMin, state.qty >= 10000 ? 500 : 50);
+  const pad = span * 0.12;
+  const step = niceStep((span + pad * 2) / 5);
+  const axisMin = rawMin < 0 ? Math.floor((rawMin - pad) / step) * step : 0;
+  const axisMax = Math.ceil((rawMax + pad) / step) * step;
+
+  if (state.tripleDayChart) state.tripleDayChart.destroy();
+  state.tripleDayChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: '3日スワップ実額',
+          data: swapTotals,
+          backgroundColor: 'rgba(92,225,167,.72)',
+          borderColor: '#5ce1a7',
+          borderWidth: 1,
+          borderRadius: 5,
+          borderSkipped: false,
+          maxBarThickness: 28,
+        },
+        {
+          label: '木→金 為替差損',
+          data: fxTotals,
+          backgroundColor: 'rgba(255,157,122,.70)',
+          borderColor: '#ff9d7a',
+          borderWidth: 1,
+          borderRadius: 5,
+          borderSkipped: false,
+          maxBarThickness: 28,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      normalized: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          align: 'start',
+          labels: {
+            color: '#8ea0b6',
+            boxWidth: 12,
+            boxHeight: 8,
+            padding: 14,
+            font: { size: 10, weight: '700' },
+          },
+        },
+        tooltip: {
+          backgroundColor: '#0b1728',
+          borderColor: 'rgba(154,181,211,.18)',
+          borderWidth: 1,
+          padding: 9,
+          displayColors: false,
+          callbacks: {
+            title(items) {
+              if (!items.length) return '';
+              const row = rows[items[0].dataIndex];
+              return row.usdtry_next_date
+                ? `${jpDate(row.date)} → ${jpDate(row.usdtry_next_date)}`
+                : jpDate(row.date);
+            },
+            label(context) {
+              if (context.datasetIndex !== 0) return '';
+              const i = context.dataIndex;
+              const swap = swapTotals[i];
+              const fx = fxTotals[i];
+              const diff = swap - fx;
+              const fxLabel = fx < 0 ? '為替差益' : '為替差損';
+              return [
+                `3日スワップ: ${yen.format(swap)}円`,
+                `${fxLabel}: ${yen.format(Math.abs(fx))}円`,
+                `差分: ${diff > 0 ? '+' : ''}${yen.format(diff)}円`,
+              ];
+            },
+            beforeBody() { return []; },
+            afterBody() { return []; },
+            footer() { return ''; },
+          },
+          filter(item) { return item.datasetIndex === 0; },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: '#71849b',
+            maxRotation: 0,
+            autoSkip: false,
+            padding: 6,
+            callback(value) { return shortDate(labels[value]); },
+          },
+          border: { color: 'rgba(154,181,211,.10)' },
+        },
+        y: {
+          min: axisMin,
+          max: axisMax,
+          grid: {
+            color(ctx) {
+              return ctx.tick.value === 0 ? 'rgba(245,248,252,.20)' : 'rgba(154,181,211,.065)';
+            },
+          },
+          ticks: {
+            color: '#71849b',
+            stepSize: step,
+            maxTicksLimit: 6,
+            padding: 7,
+            callback(value) { return `${yen0.format(value)}円`; },
+          },
+          border: { display: false },
+        },
+      },
+    },
+  });
+
+  const diffs = swapTotals.map((value, i) => value - fxTotals[i]).filter(Number.isFinite);
+  const avgSwap = mean(swapTotals);
+  const avgFx = mean(fxTotals);
+  const avgDiff = mean(diffs);
+  const summary = document.getElementById('tripleDaySummary');
+  if (summary) {
+    summary.textContent = `平均 スワップ ${yen.format(avgSwap)}円 · 為替差損 ${yen.format(avgFx)}円 · 差 ${avgDiff >= 0 ? '+' : ''}${yen.format(avgDiff)}円`;
+  }
 }
 
 function totalReturnComparison() {
@@ -241,12 +394,14 @@ function buildReturnChart() {
 }
 
 const baseRenderForReturn = render;
-render = function renderWithReturnChart() {
+render = function renderWithBonusCharts() {
   baseRenderForReturn();
+  buildTripleDayChart();
   buildReturnChart();
 };
 
 if (state.payload) {
   buildChart();
+  buildTripleDayChart();
   buildReturnChart();
 }
