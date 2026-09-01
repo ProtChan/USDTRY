@@ -161,31 +161,13 @@ buildChart = function buildChartEnhanced() {
             },
             label(context) {
               const i = context.dataIndex;
-              const row = rows[i];
               const swapValue = swap[i];
               const fxValue = fx[i];
-
-              if (state.fxMode === 'daily' && Number(row.days || 0) >= 2) {
-                const swapTotal = Number(row.sell_yen) * scale();
-                const fxTotal = Number(row.fx_cost_jpy_total) * scale();
-                const interval = row.usdtry_next_date ? `${shortDate(row.date)}→${shortDate(row.usdtry_next_date)}` : '次回まで';
-                const netTotal = Number.isFinite(swapTotal) && Number.isFinite(fxTotal) ? swapTotal - fxTotal : null;
-                return [
-                  `スワップ: ${yen.format(swapValue)}円/日 × ${row.days}日`,
-                  `${row.days}日スワップ実額: ${yen.format(swapTotal)}円`,
-                  `${interval} 為替差損: ${Number.isFinite(fxTotal) ? yen.format(Math.abs(fxTotal)) + '円' : '—'}`,
-                  `実額差引: ${Number.isFinite(netTotal) ? (netTotal > 0 ? '+' : '') + yen.format(netTotal) + '円' : '—'}`,
-                ];
-              }
-
               const diff = Number.isFinite(swapValue) && Number.isFinite(fxValue) ? swapValue - fxValue : null;
               const fxLabel = Number.isFinite(fxValue) && fxValue < 0 ? '為替差益' : '為替差損';
-              const intervalLabel = state.fxMode === 'daily' && row.usdtry_next_date
-                ? ` (${shortDate(row.date)}→${shortDate(row.usdtry_next_date)})`
-                : '';
               return [
                 `スワップ: ${Number.isFinite(swapValue) ? yen.format(swapValue) + '円/日' : '—'}`,
-                `${fxLabel}${intervalLabel}: ${Number.isFinite(fxValue) ? yen.format(Math.abs(fxValue)) + '円/日' : '—'}`,
+                `${fxLabel}: ${Number.isFinite(fxValue) ? yen.format(Math.abs(fxValue)) + '円/日' : '—'}`,
                 `差分: ${Number.isFinite(diff) ? (diff > 0 ? '+' : '') + yen.format(diff) + '円/日' : '—'}`,
               ];
             },
