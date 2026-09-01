@@ -15,8 +15,10 @@ OUT = Path("data/usdtry.json")
 YAHOO_CHART = "https://query1.finance.yahoo.com/v8/finance/chart"
 START_DATE = date(2026, 7, 1)
 MARKET_HISTORY_DAYS = 16
-NY = ZoneInfo("America/New_York")
-UA = {"User-Agent": "Mozilla/5.0 USDTRY-swap-watch/1.5"}
+JST = ZoneInfo("Asia/Tokyo")
+EXCLUDED_START_HOUR = 5
+EXCLUDED_END_HOUR = 9
+UA = {"User-Agent": "Mozilla/5.0 USDTRY-swap-watch/1.6"}
 
 
 def fetch_bytes(url: str, attempts: int = 3) -> bytes:
@@ -34,20 +36,13 @@ def fetch_bytes(url: str, attempts: int = 3) -> bytes:
     raise last_error
 
 
-def hirose_trade_date(ts: int) -> str:
-    """Map a timestamp to the FX trade date using the 17:00 New York rollover.
+def yahoo_hourly_fixed_daily_median(symbol: str) -> dict[str, dict[str, float | int]]:
+    """Build a stable JST-calendar-day representative rate.
 
-    Bars from 17:00 New York onward belong to the next FX trade date. This tracks
-    US daylight-saving changes automatically (06:00 JST in summer, 07:00 JST in winter).
+    USD/TRY repeatedly reprices around the rollover / thin-liquidity window. To avoid
+    using that transient 05:00-08:59 JST move as the day's representative level, those
+    four hourly closes are excluded and the median of the remaining closes is used.
     """
-    local = datetime.fromtimestamp(int(ts), timezone.utc).astimezone(NY)
-    trade_day = local.date() + timedelta(days=1) if local.hour >= 17 else local.date()
-    return trade_day.isoformat()
-
-
-def yahoo_hourly_trade_day_median(symbol: str) -> dict[str, dict[str, float | int]]:
-    # Fetch enough pre-history to calculate both the 7-day view and the 7/1 daily
-    # change against the prior market day, while swap rows themselves still start 7/1.
     period1 = int(
         datetime.combine(
             START_DATE - timedelta(days=MARKET_HISTORY_DAYS),
@@ -55,7 +50,7 @@ def yahoo_hourly_trade_day_median(symbol: str) -> dict[str, dict[str, float | in
             tzinfo=timezone.utc,
         ).timestamp()
     )
-    period2 = int((datetime.now(timezone.utc) + timedelta(days=1)).timestamp())
+    period2 = int((datetime.now(timezone.utc) + timedelta(days=2)).timestamp())
     query = urllib.parse.urlencode({
         "period1": period1,
         "period2": period2,
@@ -80,7 +75,10 @@ def yahoo_hourly_trade_day_median(symbol: str) -> dict[str, dict[str, float | in
         value = float(close)
         if not math.isfinite(value) or value <= 0:
             continue
-        grouped[hirose_trade_date(int(ts))].append(value)
+        local = datetime.fromtimestamp(int(ts), timezone.utc).astimezone(JST)
+        if EXCLUDED_START_HOUR <= local.hour < EXCLUDED_END_HOUR:
+            continue
+        grouped[local.date().isoformat()].append(value)
 
     return {
         day: {"median": round(float(statistics.median(values)), 8), "samples": len(values)}
@@ -101,28 +99,17 @@ def on_or_before(
     return None
 
 
-def previous_market_day(
-    series: dict[str, dict[str, float | int]],
-    target: date,
-    lookback: int = 7,
-):
-    for offset in range(1, lookback + 1):
-        key = (target - timedelta(days=offset)).isoformat()
-        if key in series:
-            return key, series[key]
-    return None
-
-
 def main() -> None:
     payload = json.loads(OUT.read_text(encoding="utf-8"))
     data = payload.get("data") or []
     if not data:
         raise RuntimeError("No swap data to enrich")
 
-    usdtry = yahoo_hourly_trade_day_median("USDTRY=X")
+    usdtry = yahoo_hourly_fixed_daily_median("USDTRY=X")
     time.sleep(0.7)
-    usdjpy = yahoo_hourly_trade_day_median("USDJPY=X")
+    usdjpy = yahoo_hourly_fixed_daily_median("USDJPY=X")
 
+    # First attach one fixed representative rate to every Hirose calendar row.
     for row in data:
         day = date.fromisoformat(row["date"])
         a_match = on_or_before(usdtry, day, 1)
@@ -148,11 +135,17 @@ def main() -> None:
         row["usdtry_rate_samples"] = int(a["samples"])
         row["usdjpy_rate_samples"] = int(b["samples"])
 
-    for row in data:
+    # Assign FX P/L to the SAME starting Hirose row as its swap credit.
+    # Example: Thursday's row contains Thursday->Friday FX deterioration and Thursday's
+    # 3-day swap credit. This makes the economic holding interval line up on one x-axis.
+    for index, row in enumerate(data):
         day = date.fromisoformat(row["date"])
         row["usdtry_prev_date"] = None
         row["usdtry_prev_rate"] = None
+        row["usdtry_next_date"] = None
+        row["usdtry_next_rate"] = None
         row["usdtry_change"] = None
+        row["fx_interval_calendar_days"] = None
         row["fx_cost_jpy_total"] = None
         row["fx_cost_jpy_per_day"] = None
         row["fx_cost_jpy_accrual_total"] = None
@@ -163,37 +156,37 @@ def main() -> None:
 
         usdtry_now = row.get("usdtry_rep_rate")
         usdjpy_now = row.get("usdjpy_rep_rate")
-        tryjpy_now = row.get("tryjpy_rep_rate")
         if not (
             isinstance(usdtry_now, (int, float))
             and isinstance(usdjpy_now, (int, float))
-            and isinstance(tryjpy_now, (int, float))
         ):
             continue
 
         lot_usd = float(row.get("lot_size") or 1000)
-        accrual_days = int(row.get("days") or 0)
 
-        # DAILY: compare the trade-day median against the immediately preceding
-        # available market trade day. This gives 2026-07-01 a 2026-06-30 reference.
-        previous = previous_market_day(usdtry, day, 7)
-        if previous:
-            prev_date, prev = previous
-            prev_rate = float(prev["median"])
-            delta = float(usdtry_now) - prev_rate
-            loss_jpy_total = lot_usd * delta * float(tryjpy_now)
-            row["usdtry_prev_date"] = prev_date
-            row["usdtry_prev_rate"] = round(prev_rate, 8)
-            row["usdtry_change"] = round(delta, 8)
-            row["fx_cost_jpy_total"] = round(loss_jpy_total, 6)
-            row["fx_cost_jpy_per_day"] = (
-                round(loss_jpy_total / accrual_days, 6) if accrual_days > 0 else None
-            )
-            row["fx_cost_jpy_accrual_total"] = round(loss_jpy_total, 6)
+        # DAILY / interval FX: current Hirose row -> next Hirose row.
+        # Divide only by elapsed calendar days, NOT by swap accrual days. Therefore a
+        # Thursday triple-swap row keeps its full one-day Thu->Fri FX move.
+        if index + 1 < len(data):
+            next_row = data[index + 1]
+            next_date = date.fromisoformat(next_row["date"])
+            next_usdtry = next_row.get("usdtry_rep_rate")
+            next_usdjpy = next_row.get("usdjpy_rep_rate")
+            if isinstance(next_usdtry, (int, float)) and isinstance(next_usdjpy, (int, float)):
+                delta = float(next_usdtry) - float(usdtry_now)
+                next_tryjpy = float(next_usdjpy) / float(next_usdtry)
+                loss_jpy_total = lot_usd * delta * next_tryjpy
+                interval_days = max(1, (next_date - day).days)
+                row["usdtry_next_date"] = next_row["date"]
+                row["usdtry_next_rate"] = round(float(next_usdtry), 8)
+                row["usdtry_change"] = round(delta, 8)
+                row["fx_interval_calendar_days"] = interval_days
+                row["fx_cost_jpy_total"] = round(loss_jpy_total, 6)
+                row["fx_cost_jpy_per_day"] = round(loss_jpy_total / interval_days, 6)
+                row["fx_cost_jpy_accrual_total"] = round(loss_jpy_total, 6)
 
-        # 7AVG: use a genuine 7-calendar-day deterioration rate from market data,
-        # not a moving average of displayed DAILY rows. Pre-history lets this exist
-        # from the first displayed swap date (2026-07-01).
+        # 7AVG remains a smooth backward-looking 7-calendar-day deterioration rate,
+        # now based on the same stable fixed-rate definition.
         reference = on_or_before(usdtry, day - timedelta(days=7), 4)
         if reference:
             ref_date, ref = reference
@@ -208,14 +201,15 @@ def main() -> None:
 
     meta = payload.setdefault("meta", {})
     meta.update({
-        "description": "Hirose LION FX USD/TRY swap plus NY-close-aligned daily and rolling-7-day FX cost",
+        "description": "Hirose LION FX USD/TRY swap plus stable-hourly fixed-rate FX cost aligned to the same holding interval",
         "market_rate_source": "Yahoo Finance chart API: USDTRY=X and USDJPY=X",
-        "market_rate_method": "Median of 1-hour closes grouped by Hirose/FX trade day at 17:00 America/New_York rollover; daily high/low are not used",
+        "market_rate_method": "JST calendar-day median of 1-hour closes excluding 05:00-08:59 JST; daily high/low are not used",
         "market_rate_history_start": (START_DATE - timedelta(days=MARKET_HISTORY_DAYS)).isoformat(),
-        "fx_cost_method": "DAILY = prior available market trade-day representative-rate change; 7AVG = 7-calendar-day USDTRY deterioration / 7, both converted to JPY",
-        "normalization": "swap=sell_yen/days; DAILY FX cost is divided by Hirose accrual days; 7AVG is a 7-calendar-day deterioration rate normalized directly to one day",
+        "fx_cost_method": "DAILY = current Hirose-row fixed USDTRY to next Hirose-row fixed USDTRY, assigned to the starting row and converted at the next row TRYJPY; divide by elapsed calendar days. 7AVG = backward-looking 7-calendar-day USDTRY deterioration / 7",
+        "normalization": "swap=sell_yen/Hirose accrual days; DAILY FX cost=interval FX loss/elapsed calendar days, never divided by Hirose swap accrual days",
         "fx_cost_sign": "positive=FX loss/cost for USDTRY short, negative=FX gain",
-        "market_day_boundary": "17:00 America/New_York (06:00 JST during US DST, 07:00 JST during US standard time)",
+        "market_day_boundary": "JST calendar day with 05:00-08:59 excluded from representative-rate calculation",
+        "excluded_hours_jst": "05:00-08:59",
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     })
 
@@ -223,7 +217,7 @@ def main() -> None:
     daily_count = sum(1 for row in data if row.get("fx_cost_jpy_per_day") is not None)
     avg7_count = sum(1 for row in data if row.get("fx_cost_7d_jpy_per_day") is not None)
     print(
-        f"aligned market-day enrichment complete: daily={daily_count}, "
+        f"stable fixed-rate enrichment complete: daily={daily_count}, "
         f"rolling7={avg7_count}, first={data[0]['date']}"
     )
 
