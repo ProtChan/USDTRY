@@ -105,7 +105,7 @@
         <div>
           <div class="section-kicker">CORE · REALIZED DAILY EDGE</div>
           <h2>ネット日次損益</h2>
-          <p>各ヒロセ日付のスワップ/日から、同じ保有区間に整列した為替差損/日を差し引いた値。ゼロより上ならその区間はキャリーが為替悪化を上回っています。</p>
+          <p>7AVGは使わず、各ヒロセ日付に実際に付与されたスワップ総額から、同じ保有区間の固定レート差による為替損益総額を差し引きます。3倍木曜は3日分スワップをそのまま木→金FXと比較します。</p>
         </div>
         <div class="range-switch" role="group" aria-label="ネット損益の表示期間">
           <button class="range-btn" data-range="30" type="button">30</button>
@@ -203,10 +203,10 @@
           <div class="formula-grid">
             <div><span>SWAP / DAY</span><b>売りスワップ円換算後 ÷ ヒロセ付与日数</b></div>
             <div><span>FX DAILY</span><b>USD数量 × (次回固定USD/TRY − 当日固定USD/TRY) × 次回TRY/JPY ÷ 実カレンダー日数</b></div>
-            <div><span>NET DAILY</span><b>スワップ / 日 − FX DAILY</b></div>
+            <div><span>NET BAR</span><b>実付与スワップ総額 − 同区間の為替損益総額</b></div>
             <div><span>FX 7AVG</span><b>(当日固定USD/TRY ÷ 7日前固定USD/TRY − 1) ÷ 7 × USD数量 × USD/JPY</b></div>
           </div>
-          <p>固定レートは毎日JST 5:00–8:59を除外し、残りの1時間足終値の中央値を使用します。FX DAILYは「当日→次のヒロセ行」の保有区間を開始日の行へ割り当てます。3倍日のFXをスワップ付与日数で1/3にはせず、実際の木→金区間として扱います。</p>
+          <p>固定レートは毎日JST 5:00–8:59を除外し、残りの1時間足終値の中央値を使用します。ネット棒グラフでは7AVGを使わず、各ヒロセ行の実付与スワップ総額と、その行から次の固定レートまでの為替損益総額を直接比較します。3倍日は3日分スワップを1/3にせず、そのまま木→金FXと対応させます。</p>
         </div>
       </details>
     </section>
@@ -224,5 +224,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="./app.js?v=20260901-beta2"></script>
+  <script src="./net-interval.js?v=20260901-beta3"></script>
 </body>
 </html>
