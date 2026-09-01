@@ -105,6 +105,7 @@ jobs:
           node --check app.js
           node --check chart-enhancements.js
           node --check return-chart.js
+          node --check beta/app.js
 
       - name: Fetch Hirose USDTRY swap
         if: steps.decision.outputs.full == 'true'
@@ -135,6 +136,7 @@ jobs:
           mkdir -p _site/data
           cp index.html styles.css mobile-fix.css app.js chart-enhancements.js return-chart.js _site/
           cp data/usdtry.json _site/data/
+          cp -R beta _site/beta
           touch _site/.nojekyll
 
       - name: Check or enable GitHub Pages
