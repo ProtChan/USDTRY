@@ -1,7 +1,6 @@
 // Bonus total-return comparison for a 1x USD/TRY short with Hirose sell swap included.
-// Normal line uses actual credited swap totals. The comparison strategy exits before
-// a Thursday 3+ day swap credit and re-enters on Friday, skipping that multi-day swap
-// and the Thursday-to-Friday FX move while paying 100 JPY per 10,000 USD round trip.
+// Every row now represents one holding interval starting on that Hirose date. Therefore
+// a Thursday triple-swap row also contains the Thursday->Friday FX move on the same x.
 
 state.showMa7 = false;
 state.returnChart = null;
@@ -25,13 +24,6 @@ function isThursdayTriple(row) {
   return utcWeekday(row.date) === 4 && Number(row.days || 0) >= 3;
 }
 
-function isFridayAfterThursdayTriple(rows, index) {
-  if (index <= 0) return false;
-  const row = rows[index];
-  const previous = rows[index - 1];
-  return utcWeekday(row.date) === 5 && isThursdayTriple(previous);
-}
-
 function totalReturnComparison() {
   if (!state.payload?.data?.length) return [];
 
@@ -43,10 +35,8 @@ function totalReturnComparison() {
 
   let holdIndex = 100;
   let dodgeIndex = 100;
-  const first = rows[0];
-  const baselineDate = first.usdtry_prev_date || first.date;
   const points = [{
-    date: baselineDate,
+    date: rows[0].date,
     holdIndex,
     dodgeIndex,
     holdNetPnlJpy: 0,
@@ -57,7 +47,7 @@ function totalReturnComparison() {
     days: 0,
   }];
 
-  rows.forEach((row, rowIndex) => {
+  rows.forEach(row => {
     const lotUsd = Number(row.lot_size || state.payload.meta?.lot_size || 1000);
     const usdJpy = Number(row.usdjpy_rep_rate);
     const swapJpy = Number(row.sell_yen);
@@ -68,18 +58,15 @@ function totalReturnComparison() {
     const referenceCapitalJpy = lotUsd * usdJpy;
     const fxPnlJpy = -fxCostJpy;
 
-    // Normal 1x short: keep the position and receive every credited swap amount.
+    // Normal 1x short: same Hirose row = credited swap + that row's forward FX move.
     const holdNetPnlJpy = swapJpy + fxPnlJpy;
     holdIndex *= 1 + holdNetPnlJpy / referenceCapitalJpy;
 
-    // Thursday -> Friday dodge:
-    // 1) On a Thursday carrying 3+ days of swap, close before the rollover, so the
-    //    multi-day swap is not received. The Wed->Thu FX move is still experienced.
-    // 2) Re-enter on Friday after the Thu->Fri move, so Friday's recorded FX P/L is
-    //    skipped, while Friday's own swap remains eligible.
-    // 3) Charge one complete close+re-entry cost: 100 JPY per 10,000 USD.
+    // Thursday -> Friday dodge: on a Thursday carrying 3+ days of swap, close before
+    // the rollover and re-enter after the Thu->Fri move. Because FX is now aligned to
+    // the Thursday row, both the triple swap and Thu->Fri FX move are skipped HERE.
     const skippedTripleSwap = isThursdayTriple(row);
-    const avoidedFx = isFridayAfterThursdayTriple(rows, rowIndex);
+    const avoidedFx = skippedTripleSwap;
     const tradeCostJpy = skippedTripleSwap
       ? (lotUsd / 10000) * ROUND_TRIP_COST_PER_10000_USD
       : 0;
@@ -98,6 +85,7 @@ function totalReturnComparison() {
       skippedTripleSwap,
       tradeCostJpy,
       days: Number(row.days || 0),
+      intervalEndDate: row.usdtry_next_date || null,
     });
   });
 
@@ -203,9 +191,9 @@ function buildReturnChart() {
               if (!items.length) return [];
               const point = points[items[0].dataIndex];
               if (point.skippedTripleSwap) {
-                return [`回避戦略: 3日分スワップ見送り + 売買コスト ${point.tradeCostJpy.toFixed(0)}円`];
+                const interval = point.intervalEndDate ? `${jpDate(point.date)}→${jpDate(point.intervalEndDate)}` : '木→金';
+                return [`回避戦略: ${interval} FX + 3日分スワップを同時回避`, `売買コスト ${point.tradeCostJpy.toFixed(0)}円`];
               }
-              if (point.avoidedFx) return ['回避戦略: 木→金の為替損益を回避'];
               return [];
             },
           },
