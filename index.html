@@ -8,8 +8,8 @@
   <title>USD/TRY Swap Watch</title>
   <meta name="description" content="ヒロセ通商 LION FX の USD/TRY 売りスワップと、早朝ロールオーバー時間を除外した固定レートベースの為替差損を比較" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-  <link rel="stylesheet" href="./styles.css?v=20260901-fixedrate3" />
-  <link rel="stylesheet" href="./mobile-fix.css?v=20260901-fixedrate3" />
+  <link rel="stylesheet" href="./styles.css?v=20260901-triplechart1" />
+  <link rel="stylesheet" href="./mobile-fix.css?v=20260901-triplechart1" />
 </head>
 <body>
   <div class="ambient ambient-a"></div>
@@ -93,6 +93,21 @@
       </div>
     </section>
 
+    <section class="panel chart-panel" style="margin-top:12px">
+      <div class="panel-head chart-head">
+        <div>
+          <div class="section-kicker">TRIPLE SWAP · THU → FRI</div>
+          <h2>3倍日のスワップ vs 為替差損</h2>
+          <p class="panel-sub">3日分スワップが付与された木曜だけを抽出し、3日スワップ実額と同じ木→金区間の為替差損実額を横並びで比較します。</p>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:255px"><canvas id="tripleDayChart" aria-label="Triple swap versus Thursday to Friday FX loss"></canvas></div>
+      <div class="chart-foot">
+        <span>各棒 = 選択中のUSD数量に換算</span>
+        <span id="tripleDaySummary">—</span>
+      </div>
+    </section>
+
     <div class="lower-grid">
       <section class="panel table-panel">
         <div class="panel-head compact">
@@ -146,8 +161,8 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="./app.js?v=20260901-fixedrate3"></script>
-  <script src="./chart-enhancements.js?v=20260901-fixedrate3"></script>
-  <script src="./return-chart.js?v=20260901-fixedrate3"></script>
+  <script src="./app.js?v=20260901-triplechart1"></script>
+  <script src="./chart-enhancements.js?v=20260901-triplechart1"></script>
+  <script src="./return-chart.js?v=20260901-triplechart1"></script>
 </body>
 </html>
