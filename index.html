@@ -6,10 +6,10 @@
   <meta name="color-scheme" content="dark" />
   <meta name="theme-color" content="#07111f" />
   <title>USD/TRY Swap Watch</title>
-  <meta name="description" content="ヒロセ通商 LION FX の USD/TRY 売りスワップとNYクローズ基準の為替差損を円換算・1日あたりで可視化" />
+  <meta name="description" content="ヒロセ通商 LION FX の USD/TRY 売りスワップと、早朝ロールオーバー時間を除外した固定レートベースの為替差損を比較" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-  <link rel="stylesheet" href="./styles.css?v=20260831-return2" />
-  <link rel="stylesheet" href="./mobile-fix.css?v=20260831-return2" />
+  <link rel="stylesheet" href="./styles.css?v=20260901-fixedrate1" />
+  <link rel="stylesheet" href="./mobile-fix.css?v=20260901-fixedrate1" />
 </head>
 <body>
   <div class="ambient ambient-a"></div>
@@ -20,7 +20,7 @@
       <div class="brand-block">
         <div class="eyebrow"><span class="pulse"></span> HIROSE · LION FX</div>
         <h1>USD/TRY <span>Swap Watch</span></h1>
-        <p class="lead">売りスワップとUSD/TRY売りの<strong>為替差損</strong>を円建て・1日あたりで比較。為替代表値はヒロセの取引日に合わせたNYクローズ基準で、日中高安ではなく1時間足終値の中央値を使います。</p>
+        <p class="lead">売りスワップとUSD/TRY売りの<strong>為替差損</strong>を円建てで比較。為替代表値は毎日JST 5:00–8:59の薄商い・ロールオーバー時間を除き、残りの1時間足終値中央値を固定レートとして使います。</p>
       </div>
       <div class="header-side">
         <div class="status-pill" id="statusPill">データ読込中</div>
@@ -67,7 +67,7 @@
         <div>
           <div class="section-kicker">DAILY JPY / USDTRY SHORT</div>
           <h2>スワップと為替差損 / 日</h2>
-          <p class="panel-sub">デフォルトのFX 7AVGは7日前からのUSD/TRY悪化率を7日で日次化した滑らかな表示。FX DAILYで前回差ベースの日次値も確認できます。</p>
+          <p class="panel-sub">FX DAILYは各ヒロセ日付から次のヒロセ日付までの固定レート差を、その開始日に割り当てます。したがって木曜の3日付与マーカーと木→金の大きな為替悪化が同じ日付に並びます。デフォルトは滑らかなFX 7AVGです。</p>
         </div>
         <div class="chart-actions">
           <div class="range-switch" role="group" aria-label="表示期間">
@@ -89,7 +89,7 @@
       <div class="chart-wrap"><canvas id="swapChart" aria-label="USDTRY swap and FX cost chart"></canvas></div>
       <div class="chart-foot">
         <span id="rangeLabel">2026/07/01 —</span>
-        <span>代表レート = NY 17:00境界の取引日ごとの1時間足終値中央値</span>
+        <span>固定レート = JST 5:00–8:59を除く1時間足終値中央値</span>
       </div>
     </section>
 
@@ -110,15 +110,16 @@
       <aside class="panel method-panel">
         <div class="section-kicker">METHOD</div>
         <h2>計算方法</h2>
-        <div class="formula"><div>スワップ / 日</div><strong>売りスワップ円換算後 ÷ 付与日数</strong></div>
-        <div class="formula fx-formula"><div>FX 7AVG</div><strong>(当日代表USD/TRY ÷ 7日前代表USD/TRY − 1) ÷ 7 × USD数量 × USD/JPY</strong></div>
-        <div class="formula fx-formula"><div>FX DAILY</div><strong>USD数量 × (当日代表USD/TRY − 直前代表USD/TRY) × TRY/JPY ÷ 付与日数</strong></div>
-        <p>USD/TRY・USD/JPYは1時間足から、<strong>NY 17:00を境界にした取引日</strong>ごとの終値中央値を代表値として使用します。これは米国夏時間では日本時間6時、標準時間では7時のロールオーバーに自動追従します。日中高値・安値は使いません。デフォルトのFX 7AVGは、7日前からのUSD/TRY悪化率を7で割って円換算するため、複数日付与による日次ノイズを受けにくい表示です。7/1から値を出すため、為替レート自体は6月中旬まで遡って取得しています。</p>
+        <div class="formula"><div>スワップ / 日</div><strong>売りスワップ円換算後 ÷ ヒロセ付与日数</strong></div>
+        <div class="formula fx-formula"><div>FX 7AVG</div><strong>(当日固定USD/TRY ÷ 7日前固定USD/TRY − 1) ÷ 7 × USD数量 × USD/JPY</strong></div>
+        <div class="formula fx-formula"><div>FX DAILY</div><strong>USD数量 × (次回固定USD/TRY − 当日固定USD/TRY) × 次回TRY/JPY ÷ 実カレンダー日数</strong></div>
+        <p>USD/TRY・USD/JPYは1時間足から、毎日<strong>JST 5:00–8:59を除外</strong>し、残りの終値中央値をその日の固定レートとして使用します。FX DAILYは「当日→次のヒロセ行」の保有区間を開始日の行へ割り当てます。これにより木曜行には木→金の為替悪化と木曜の3日分スワップが同時に載ります。FXの日次化にヒロセの付与日数は使わず、次の行までの実カレンダー日数で割ります。</p>
         <dl class="method-list">
           <div><dt>開始</dt><dd id="methodStart">2026/07/01</dd></div>
           <div><dt>基準Lot</dt><dd>1,000 USD</dd></div>
           <div><dt>為替履歴</dt><dd>2026/06中旬〜</dd></div>
-          <div><dt>為替代表値</dt><dd>NYクローズ取引日中央値</dd></div>
+          <div><dt>固定レート</dt><dd>JST 5–9時除外中央値</dd></div>
+          <div><dt>FX割当</dt><dd>当日 → 次回を当日に計上</dd></div>
           <div><dt>デフォルトFX</dt><dd>7日悪化率 ÷ 7</dd></div>
           <div><dt>更新</dt><dd>毎日 10:30 JST</dd></div>
         </dl>
@@ -131,7 +132,7 @@
         <div>
           <div class="section-kicker">EXTRA · TOTAL RETURN</div>
           <h2>USD/TRY 売スワップ込みリターン推移</h2>
-          <p class="panel-sub">レバ1倍の通常ホールドと「3日付与の木曜に決済→金曜に売り直し」を比較。回避戦略は木曜の3日分スワップを受け取らない代わりに木→金の為替損益を回避し、往復売買コスト100円 / 10,000 USDを控除します。</p>
+          <p class="panel-sub">レバ1倍の通常ホールドと「3日付与の木曜に決済→金曜に売り直し」を比較。通常線では木曜行に3日分スワップと木→金FXを同時反映。回避戦略はその両方を避け、往復売買コスト100円 / 10,000 USDを控除します。</p>
         </div>
       </div>
       <div class="chart-wrap" style="height:260px"><canvas id="returnChart" aria-label="USDTRY short total return comparison"></canvas></div>
@@ -145,8 +146,8 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="./app.js?v=20260831-return2"></script>
-  <script src="./chart-enhancements.js?v=20260831-return2"></script>
-  <script src="./return-chart.js?v=20260831-return2"></script>
+  <script src="./app.js?v=20260901-fixedrate1"></script>
+  <script src="./chart-enhancements.js?v=20260901-fixedrate1"></script>
+  <script src="./return-chart.js?v=20260901-fixedrate1"></script>
 </body>
 </html>
