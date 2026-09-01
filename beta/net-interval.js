@@ -158,7 +158,7 @@ window.buildNetChart = function buildNetChartInterval() {
   setTone(boxes[2], total);
 };
 
-// Keep the smoothed 7AVG line chart, but make its latest decomposition use the raw market interval.
+// Keep the smoothed 7AVG trend chart, but show raw interval accounting in its decomposition card.
 const baseBuildCarryChartForInterval = buildCarryChart;
 window.buildCarryChart = function buildCarryChartInterval() {
   baseBuildCarryChartForInterval();
@@ -206,9 +206,45 @@ window.updateRecentCards = function updateRecentCardsInterval() {
 
 window.updateNetSectionCopy = function updateNetSectionCopyInterval() {
   const section = document.getElementById('net');
-  if (!section) return;
-  const heading = section.querySelector('h2');
-  const copy = section.querySelector('.section-head p');
-  if (heading) heading.textContent = 'ネット損益 / 市場区間';
-  if (copy) copy.textContent = '7AVGは使わず、各ヒロセ日付の実付与スワップ総額から、次の取引日固定レートまでの為替損益総額をそのまま差し引きます。金→月も1市場区間として扱い、3暦日では割りません。3倍木曜は3日分スワップと木→金FXを総額同士で比較します。';
+  if (section) {
+    const kicker = section.querySelector('.section-kicker');
+    const heading = section.querySelector('h2');
+    const copy = section.querySelector('.section-head p');
+    if (kicker) kicker.textContent = 'CORE · REALIZED MARKET INTERVAL';
+    if (heading) heading.textContent = 'ネット損益 / 市場区間';
+    if (copy) copy.textContent = '7AVGは使わず、各ヒロセ日付の実付与スワップ総額から、次の取引日固定レートまでの為替損益総額をそのまま差し引きます。金→月も1市場区間として扱い、3暦日では割りません。3倍木曜は3日分スワップと木→金FXを総額同士で比較します。';
+  }
+
+  const summaryLabels = document.querySelectorAll('#netSummary span');
+  if (summaryLabels[0]) summaryLabels[0].textContent = '平均 / 区間';
+  if (summaryLabels[1]) summaryLabels[1].textContent = 'プラス区間';
+  if (summaryLabels[2]) summaryLabels[2].textContent = '区間合計';
+
+  const metrics = document.querySelectorAll('.metric-grid .metric');
+  if (metrics[2]) {
+    const label = metrics[2].querySelector('span');
+    if (label) label.textContent = 'LATEST INTERVAL NET';
+  }
+  if (metrics[3]) {
+    const label = metrics[3].querySelector('span');
+    const note = metrics[3].querySelector('small');
+    if (label) label.textContent = '30D NET REALIZED';
+    if (note) note.textContent = '直近30日内の市場区間ネット合計';
+  }
+
+  const formulas = document.querySelectorAll('.formula-grid > div');
+  if (formulas[1]) {
+    const label = formulas[1].querySelector('span');
+    const formula = formulas[1].querySelector('b');
+    if (label) label.textContent = 'FX / MARKET INTERVAL';
+    if (formula) formula.textContent = 'USD数量 × (次回固定USD/TRY − 当日固定USD/TRY) × 次回TRY/JPY';
+  }
+  if (formulas[2]) {
+    const label = formulas[2].querySelector('span');
+    const formula = formulas[2].querySelector('b');
+    if (label) label.textContent = 'NET / MARKET INTERVAL';
+    if (formula) formula.textContent = '実付与スワップ総額 − 同市場区間の為替損益総額';
+  }
+  const methodCopy = document.querySelector('.method-body > p');
+  if (methodCopy) methodCopy.textContent = '固定レートは毎日JST 5:00–8:59を除外し、残りの1時間足終値中央値を使用します。各ヒロセ日付から次の取引日固定レートまでを1市場区間として扱い、為替差損は暦日数で割りません。したがって金→月も1区間、3倍木曜は3日分スワップと木→金FXを総額同士で比較します。FX 7AVGは別の長期トレンド表示にのみ使用します。';
 };
