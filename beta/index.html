@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark" />
   <meta name="theme-color" content="#07101d" />
   <title>USD/TRY Carry Lab β</title>
-  <meta name="description" content="USD/TRYのスワップ、為替差損、ネット日次損益、3倍日、トータルリターンを一体で検証するベータ版ダッシュボード" />
+  <meta name="description" content="USD/TRYのスワップ、為替差損、市場区間ネット損益、3倍日、トータルリターンを一体で検証するベータ版ダッシュボード" />
   <link rel="stylesheet" href="./beta.css?v=20260901-beta1" />
 </head>
 <body>
@@ -75,14 +75,14 @@
           <small>直近30付与日の平均</small>
         </article>
         <article class="metric card net-emphasis">
-          <span>LATEST CONFIRMED NET</span>
+          <span>LATEST INTERVAL NET</span>
           <strong id="latestNet">—</strong>
-          <small id="latestNetMeta">スワップ − 日次為替差損</small>
+          <small id="latestNetMeta">実付与スワップ − 同市場区間FX</small>
         </article>
         <article class="metric card">
-          <span>30D NET ESTIMATE</span>
+          <span>30D NET REALIZED</span>
           <strong id="net30Estimate">—</strong>
-          <small>直近30確定ネット平均 × 30日</small>
+          <small>直近30日内の市場区間ネット合計</small>
         </article>
       </div>
     </section>
@@ -103,9 +103,9 @@
     <section class="section" id="net">
       <div class="section-head">
         <div>
-          <div class="section-kicker">CORE · REALIZED DAILY EDGE</div>
-          <h2>ネット日次損益</h2>
-          <p>7AVGは使わず、各ヒロセ日付に実際に付与されたスワップ総額から、同じ保有区間の固定レート差による為替損益総額を差し引きます。3倍木曜は3日分スワップをそのまま木→金FXと比較します。</p>
+          <div class="section-kicker">CORE · REALIZED MARKET INTERVAL</div>
+          <h2>ネット損益 / 市場区間</h2>
+          <p>7AVGは使わず、各ヒロセ日付の実付与スワップ総額から、次の取引日固定レートまでの為替損益総額をそのまま差し引きます。金→月も1市場区間として扱い、3暦日では割りません。3倍木曜は3日分スワップと木→金FXを総額同士で比較します。</p>
         </div>
         <div class="range-switch" role="group" aria-label="ネット損益の表示期間">
           <button class="range-btn" data-range="30" type="button">30</button>
@@ -113,11 +113,11 @@
         </div>
       </div>
       <article class="chart-card card">
-        <div class="chart-wrap net-wrap"><canvas id="netChart" aria-label="ネット日次損益"></canvas></div>
+        <div class="chart-wrap net-wrap"><canvas id="netChart" aria-label="市場区間ネット損益"></canvas></div>
         <div class="chart-summary three" id="netSummary">
-          <div><span>平均ネット</span><b>—</b></div>
-          <div><span>プラス日</span><b>—</b></div>
-          <div><span>観測値合計</span><b>—</b></div>
+          <div><span>平均 / 区間</span><b>—</b></div>
+          <div><span>プラス区間</span><b>—</b></div>
+          <div><span>区間合計</span><b>—</b></div>
         </div>
       </article>
     </section>
@@ -127,7 +127,7 @@
         <div>
           <div class="section-kicker">CARRY COMPONENTS</div>
           <h2>スワップと為替差損</h2>
-          <p>スワップは実額の日次換算。為替側は日々のノイズを抑えた7日悪化率÷7をデフォルト表示し、キャリー水準との関係を見ます。</p>
+          <p>スワップは実額の日次換算。為替側は日々のノイズを抑えた7日悪化率÷7をトレンド表示し、右側の最新区間分解では実際の市場区間総額を使います。</p>
         </div>
       </div>
       <div class="carry-grid">
@@ -202,11 +202,11 @@
         <div class="method-body">
           <div class="formula-grid">
             <div><span>SWAP / DAY</span><b>売りスワップ円換算後 ÷ ヒロセ付与日数</b></div>
-            <div><span>FX DAILY</span><b>USD数量 × (次回固定USD/TRY − 当日固定USD/TRY) × 次回TRY/JPY ÷ 実カレンダー日数</b></div>
-            <div><span>NET BAR</span><b>実付与スワップ総額 − 同区間の為替損益総額</b></div>
+            <div><span>FX / MARKET INTERVAL</span><b>USD数量 × (次回固定USD/TRY − 当日固定USD/TRY) × 次回TRY/JPY</b></div>
+            <div><span>NET / MARKET INTERVAL</span><b>実付与スワップ総額 − 同市場区間の為替損益総額</b></div>
             <div><span>FX 7AVG</span><b>(当日固定USD/TRY ÷ 7日前固定USD/TRY − 1) ÷ 7 × USD数量 × USD/JPY</b></div>
           </div>
-          <p>固定レートは毎日JST 5:00–8:59を除外し、残りの1時間足終値の中央値を使用します。ネット棒グラフでは7AVGを使わず、各ヒロセ行の実付与スワップ総額と、その行から次の固定レートまでの為替損益総額を直接比較します。3倍日は3日分スワップを1/3にせず、そのまま木→金FXと対応させます。</p>
+          <p>固定レートは毎日JST 5:00–8:59を除外し、残りの1時間足終値中央値を使用します。各ヒロセ日付から次の取引日固定レートまでを1市場区間として扱い、為替差損は暦日数で割りません。したがって金→月も1区間、3倍木曜は3日分スワップと木→金FXを総額同士で比較します。FX 7AVGは別の長期トレンド表示にのみ使用します。</p>
         </div>
       </details>
     </section>
@@ -224,6 +224,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="./app.js?v=20260901-beta2"></script>
-  <script src="./net-interval.js?v=20260901-beta3"></script>
+  <script src="./net-interval.js?v=20260901-beta4"></script>
 </body>
 </html>
