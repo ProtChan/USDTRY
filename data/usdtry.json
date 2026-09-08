@@ -14,8 +14,8 @@
     "normalization": "swap=sell_yen/Hirose accrual days; DAILY FX cost=interval FX loss/elapsed calendar days, never divided by Hirose swap accrual days",
     "fx_cost_sign": "positive=FX loss/cost for USDTRY short, negative=FX gain",
     "records": 49,
-    "generated_at": "2026-09-08T00:40:46+00:00",
-    "pages_fetched_this_run": 2,
+    "generated_at": "2026-09-08T11:42:40+00:00",
+    "pages_fetched_this_run": 1,
     "market_rate_history_start": "2026-06-15",
     "market_day_boundary": "JST calendar day with 05:00-08:59 excluded from representative-rate calculation",
     "excluded_hours_jst": "05:00-08:59"
@@ -1535,10 +1535,10 @@
       "usdtry_next_date": null,
       "usdtry_next_rate": null,
       "fx_interval_calendar_days": null,
+      "fx_cost_7d_jpy_per_day": 80.169258,
       "usdtry_7d_ref_date": "2026-08-31",
       "usdtry_7d_ref_rate": 48.25619888,
-      "usdtry_7d_change_pct": 0.36078845,
-      "fx_cost_7d_jpy_per_day": 80.169258
+      "usdtry_7d_change_pct": 0.36078845
     }
   ]
 }
