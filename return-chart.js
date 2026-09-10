@@ -1,6 +1,6 @@
-// Bonus charts: triple-swap comparison and 1x total-return comparison.
-// Every row represents one holding interval starting on that Hirose date. Therefore
-// a Thursday triple-swap row also contains the Thursday->Friday FX move on the same x.
+// Bonus charts: multi-day swap comparison and 1x total-return comparison.
+// Every row represents one holding interval starting on that Hirose date. Multi-day
+// credits are detected from Hirose's actual `days` value rather than a fixed weekday.
 
 state.showMa7 = false;
 state.returnChart = null;
@@ -18,22 +18,24 @@ if (maButtonOnLoad) {
 const maLegendOnLoad = document.getElementById('maLegend');
 if (maLegendOnLoad) maLegendOnLoad.classList.add('series-muted');
 
-function utcWeekday(iso) {
-  return new Date(`${iso}T12:00:00Z`).getUTCDay();
-}
-
-function isThursdayTriple(row) {
-  return utcWeekday(row.date) === 4 && Number(row.days || 0) >= 3;
+function isMultiDayCredit(row) {
+  return Number(row?.days || 0) >= 3;
 }
 
 function tripleDayRows() {
   if (!state.payload?.data?.length) return [];
   return state.payload.data.filter(row =>
-    Number(row.days || 0) === 3 &&
+    isMultiDayCredit(row) &&
     Number.isFinite(Number(row.sell_yen)) &&
     row.fx_cost_jpy_total != null &&
     Number.isFinite(Number(row.fx_cost_jpy_total))
   );
+}
+
+function rateAnchorLabel(row) {
+  const hour = Number(row?.market_rate_hour_jst);
+  if (!Number.isFinite(hour)) return '固定時刻レート';
+  return `${String(hour).padStart(2, '0')}:00 JST`;
 }
 
 function buildTripleDayChart() {
@@ -62,7 +64,7 @@ function buildTripleDayChart() {
       labels,
       datasets: [
         {
-          label: '3日スワップ実額',
+          label: '複数日スワップ実額',
           data: swapTotals,
           backgroundColor: 'rgba(92,225,167,.72)',
           borderColor: '#5ce1a7',
@@ -72,7 +74,7 @@ function buildTripleDayChart() {
           maxBarThickness: 28,
         },
         {
-          label: '木→金 為替差損',
+          label: '同区間 為替差損',
           data: fxTotals,
           backgroundColor: 'rgba(255,157,122,.70)',
           borderColor: '#ff9d7a',
@@ -118,14 +120,16 @@ function buildTripleDayChart() {
             },
             label(context) {
               const i = context.dataIndex;
+              const row = rows[i];
               const swap = swapTotals[i];
               const fx = fxTotals[i];
               const diff = swap - fx;
               const fxLabel = fx < 0 ? '為替差益' : '為替差損';
               return [
-                `3日スワップ: ${yen.format(swap)}円`,
+                `${Number(row.days || 0)}日スワップ: ${yen.format(swap)}円`,
                 `${fxLabel}: ${yen.format(Math.abs(fx))}円`,
                 `差分: ${diff > 0 ? '+' : ''}${yen.format(diff)}円`,
+                `為替基準: ${rateAnchorLabel(row)} → ${rateAnchorLabel(state.payload.data.find(r => r.date === row.usdtry_next_date))}`,
               ];
             },
             beforeBody() { return []; },
@@ -173,7 +177,7 @@ function buildTripleDayChart() {
   const avgDiff = mean(diffs);
   const summary = document.getElementById('tripleDaySummary');
   if (summary) {
-    summary.textContent = `平均 スワップ ${yen.format(avgSwap)}円 · 為替差損 ${yen.format(avgFx)}円 · 差 ${avgDiff >= 0 ? '+' : ''}${yen.format(avgDiff)}円`;
+    summary.textContent = `対象 ${rows.length}回 · 平均 スワップ ${yen.format(avgSwap)}円 · 為替差損 ${yen.format(avgFx)}円 · 差 ${avgDiff >= 0 ? '+' : ''}${yen.format(avgDiff)}円`;
   }
 }
 
@@ -219,7 +223,9 @@ function totalReturnComparison() {
     const holdNetPnlJpy = swapJpy + fxPnlJpy;
     holdIndex *= 1 + holdNetPnlJpy / referenceCapitalJpy;
 
-    const skippedTripleSwap = isThursdayTriple(row);
+    // Use Hirose's actual accrual-day count. This catches 4-day and shifted
+    // multi-day credits instead of assuming every event is a Thursday 3x.
+    const skippedTripleSwap = isMultiDayCredit(row);
     const avoidedFx = skippedTripleSwap;
     const tradeCostJpy = skippedTripleSwap ? ROUND_TRIP_COST_PER_10000_USD : 0;
     const dodgeSwapJpy = skippedTripleSwap ? 0 : swapJpy;
@@ -289,7 +295,7 @@ function buildReturnChart() {
           spanGaps: true,
         },
         {
-          label: '木曜決済 → 金曜売り直し',
+          label: '複数日付与前に決済 → 次回売り直し',
           data: dodgeValues,
           borderColor: '#71a7ff',
           backgroundColor: 'transparent',
@@ -343,9 +349,9 @@ function buildReturnChart() {
               if (!items.length) return [];
               const point = points[items[0].dataIndex];
               if (point.skippedTripleSwap) {
-                const interval = point.intervalEndDate ? `${jpDate(point.date)}→${jpDate(point.intervalEndDate)}` : '木→金';
+                const interval = point.intervalEndDate ? `${jpDate(point.date)}→${jpDate(point.intervalEndDate)}` : '次回まで';
                 return [
-                  `回避戦略: ${interval} FX + 3日分スワップを同時回避`,
+                  `回避戦略: ${interval} FX + ${point.days}日分スワップを同時回避`,
                   `売買コスト ${point.tradeCostJpy.toFixed(0)}円 / 10,000 USD`,
                 ];
               }
@@ -389,7 +395,7 @@ function buildReturnChart() {
   const edgePct = latest.dodgeIndex - latest.holdIndex;
   const summary = document.getElementById('returnSummary');
   if (summary) {
-    summary.textContent = `通常 ${holdPct >= 0 ? '+' : ''}${holdPct.toFixed(3)}% · 木→金回避 ${dodgePct >= 0 ? '+' : ''}${dodgePct.toFixed(3)}% · 差 ${edgePct >= 0 ? '+' : ''}${edgePct.toFixed(3)}pt`;
+    summary.textContent = `通常 ${holdPct >= 0 ? '+' : ''}${holdPct.toFixed(3)}% · 複数日回避 ${dodgePct >= 0 ? '+' : ''}${dodgePct.toFixed(3)}% · 差 ${edgePct >= 0 ? '+' : ''}${edgePct.toFixed(3)}pt`;
   }
   const baseline = document.getElementById('returnBaseline');
   if (baseline) baseline.textContent = `Index 100 = ${jpDate(points[0].date)} · 1x · 往復100円/1万USD`;
