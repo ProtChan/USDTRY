@@ -5,170 +5,162 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark" />
   <meta name="theme-color" content="#07111f" />
-  <title>USD/TRY Swap Watch</title>
-  <meta name="description" content="ヒロセ通商 LION FX の USD/TRY 売りスワップと、同一時刻の固定レートベースの為替差損を比較" />
+  <title>USD/TRY Carry Dashboard</title>
+  <meta name="description" content="ヒロセ通商 LION FX のUSD/TRY売りスワップ、固定時刻為替差損、複数日付与、トータルリターンを一つの定義で確認するダッシュボード" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-  <link rel="stylesheet" href="./styles.css?v=20260901-fastpoll1" />
-  <link rel="stylesheet" href="./mobile-fix.css?v=20260901-fastpoll1" />
+  <link rel="stylesheet" href="./styles.css?v=20260911-unified2" />
 </head>
 <body>
-  <div class="ambient ambient-a"></div>
-  <div class="ambient ambient-b"></div>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#overview" aria-label="USDTRY dashboard home">
+        <span class="brand-mark">U/T</span>
+        <span><b>USD/TRY</b><small>Carry Dashboard</small></span>
+      </a>
+      <nav class="top-nav" aria-label="ページ内ナビゲーション">
+        <a href="#trend">推移</a>
+        <a href="#events">複数日</a>
+        <a href="#returns">リターン</a>
+        <a href="#data">データ</a>
+      </nav>
+      <div class="header-actions">
+        <span class="status-pill" id="statusPill">読込中</span>
+        <div class="segmented" role="group" aria-label="表示数量">
+          <button class="seg-btn active" data-qty="1000" type="button">1,000 USD</button>
+          <button class="seg-btn" data-qty="10000" type="button">10,000 USD</button>
+        </div>
+      </div>
+    </div>
+  </header>
 
   <main class="shell">
-    <header class="topbar">
-      <div class="brand-block">
-        <div class="eyebrow"><span class="pulse"></span> HIROSE · LION FX</div>
-        <h1>USD/TRY <span>Swap Watch</span></h1>
-        <p class="lead">売りスワップとUSD/TRY売りの<strong>為替差損</strong>を円建てで比較。為替代表値は毎日23:00 JSTを基準に、USD/TRYとUSD/JPYの<strong>同一時刻</strong>の1時間足終値を使用します。23時が欠ける場合だけ最大3時間前までフォールバックします。</p>
+    <section class="hero" id="overview">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="live-dot"></span> HIROSE LION FX · USD/TRY SHORT</div>
+        <h1>スワップだけでなく、<br><span>為替差損まで同じ時間軸で見る。</span></h1>
+        <p>ヒロセの実付与スワップと、毎日23:00 JSTを基準に揃えたUSD/TRY・USD/JPYから為替差損を計算。複数日付与も曜日固定ではなく実際の付与日数で判定します。</p>
       </div>
-      <div class="header-side">
-        <div class="status-pill" id="statusPill">データ読込中</div>
-        <div class="unit-switch" role="group" aria-label="表示数量">
-          <button class="unit-btn active" data-qty="1000">1,000 USD</button>
-          <button class="unit-btn" data-qty="10000">10,000 USD</button>
-        </div>
+      <div class="freshness">
+        <span>最新スワップ</span><b id="freshSwap">—</b>
+        <span>為替アンカー</span><b id="freshAnchor">—</b>
+        <span>生成</span><b id="freshGenerated">—</b>
       </div>
-    </header>
+    </section>
 
-    <section class="snapshot-grid" aria-label="最新スワップ概要">
-      <article class="hero-kpi">
-        <div class="hero-kpi-top">
-          <div>
-            <div class="kpi-label">LATEST · 1日あたり</div>
-            <div class="hero-value" id="latestValue">—</div>
-            <div class="kpi-meta" id="latestMeta">—</div>
-          </div>
-          <div class="spark-wrap" aria-hidden="true"><canvas id="sparkChart"></canvas></div>
+    <section class="overview-grid" aria-label="主要指標">
+      <article class="card primary-kpi">
+        <div class="card-label">LATEST SWAP / DAY</div>
+        <div class="primary-value" id="latestSwap">—</div>
+        <div class="primary-meta" id="latestSwapMeta">—</div>
+        <div class="mini-row">
+          <span>付与総額 <b id="latestSwapTotal">—</b></span>
+          <span>売りpt <b id="latestSwapPoints">—</b></span>
         </div>
-        <div class="hero-bottom">
-          <span id="latestTotal">円換算合計 —</span>
-          <span id="latestPoints">売りポイント —</span>
-        </div>
+        <div class="spark-wrap"><canvas id="sparkChart" aria-label="最近のスワップ推移"></canvas></div>
       </article>
 
-      <div class="change-grid">
-        <article class="change-card"><div class="change-label">前回比</div><div class="change-value" id="changePrev">—</div><div class="change-meta" id="changePrevMeta">直前付与日</div></article>
-        <article class="change-card"><div class="change-label">7日前比</div><div class="change-value" id="changeWeek">—</div><div class="change-meta" id="changeWeekMeta">—</div></article>
-        <article class="change-card"><div class="change-label">30日前比</div><div class="change-value" id="changeMonth">—</div><div class="change-meta" id="changeMonthMeta">—</div></article>
+      <div class="metric-grid">
+        <article class="card metric"><span>7 OBS AVG</span><b id="avg7">—</b><small>直近7付与日</small></article>
+        <article class="card metric"><span>30 OBS AVG</span><b id="avg30">—</b><small>直近30付与日</small></article>
+        <article class="card metric emphasis"><span>LATEST INTERVAL NET</span><b id="latestNet">—</b><small id="latestNetMeta">確定済み最新区間</small></article>
+        <article class="card metric"><span>30D INTERVAL NET</span><b id="net30">—</b><small>直近30暦日の確定区間合計</small></article>
       </div>
     </section>
 
-    <section class="kpi-grid" aria-label="統計指標">
-      <article class="kpi"><div class="kpi-label">7 OBS AVG</div><div class="kpi-value" id="avg7Value">—</div><div class="kpi-meta">直近7付与日の平均</div></article>
-      <article class="kpi"><div class="kpi-label">30 OBS AVG</div><div class="kpi-value" id="avg30Value">—</div><div class="kpi-meta">直近30付与日の平均</div></article>
-      <article class="kpi"><div class="kpi-label">30D ESTIMATE</div><div class="kpi-value" id="monthValue">—</div><div class="kpi-meta">30回平均 × 30日</div></article>
-      <article class="kpi range-card high"><div class="kpi-label">RANGE HIGH</div><div class="kpi-value" id="highValue">—</div><div class="kpi-meta" id="highMeta">—</div></article>
-      <article class="kpi range-card low"><div class="kpi-label">RANGE LOW</div><div class="kpi-value" id="lowValue">—</div><div class="kpi-meta" id="lowMeta">—</div></article>
-    </section>
-
-    <section class="panel chart-panel">
-      <div class="panel-head chart-head">
+    <section class="section" id="trend">
+      <div class="section-head">
         <div>
-          <div class="section-kicker">DAILY JPY / USDTRY SHORT</div>
-          <h2>スワップと為替差損 / 日</h2>
-          <p class="panel-sub">FX DAILYは各ヒロセ日付の固定時刻レートから次のヒロセ日付の固定時刻レートまでを、その開始日に割り当てます。複数日付与も曜日ではなくヒロセの実際の付与日数を使います。デフォルトは7日平均です。</p>
+          <div class="section-kicker">CORE VIEW</div>
+          <h2>スワップと為替コスト</h2>
+          <p id="trendDescription">日々の比較は7日平均の為替悪化率でノイズを抑えています。FX DAILYへ切り替えると、当日23時→次回ヒロセ日付23時の実区間を日割り表示します。</p>
         </div>
-        <div class="chart-actions">
-          <div class="range-switch" role="group" aria-label="表示期間">
-            <button class="range-btn" data-range="30">30</button>
-            <button class="range-btn" data-range="90">90</button>
-            <button class="range-btn active" data-range="all">ALL</button>
+        <div class="controls">
+          <div class="segmented" role="group" aria-label="表示期間">
+            <button class="seg-btn" data-range="30" type="button">30</button>
+            <button class="seg-btn" data-range="90" type="button">90</button>
+            <button class="seg-btn active" data-range="all" type="button">ALL</button>
           </div>
-          <button class="series-btn active fx-mode-btn" id="toggleFxMode" type="button" aria-pressed="true">FX 7AVG</button>
-          <button class="series-btn" id="toggleMa7" type="button" aria-pressed="false">MA7 OFF</button>
-          <button class="download-btn" id="downloadCsv">CSV ↓</button>
+          <button class="plain-btn active" id="toggleFxMode" type="button">FX 7AVG</button>
         </div>
       </div>
-      <div class="chart-legend">
-        <span><i class="legend-dot actual"></i>スワップ / 日</span>
-        <span id="maLegend" class="series-muted"><i class="legend-line"></i>7回移動平均</span>
-        <span><i class="legend-fx"></i><b id="fxLegendText">為替差損 7日平均</b></span>
-        <span><i class="legend-triple"></i>複数日付与</span>
-      </div>
-      <div class="chart-wrap"><canvas id="swapChart" aria-label="USDTRY swap and FX cost chart"></canvas></div>
-      <div class="chart-foot">
-        <span id="rangeLabel">2026/07/01 —</span>
-        <span>固定レート = 23:00 JST基準の同一時刻1時間足終値</span>
-      </div>
+      <article class="card chart-card">
+        <div class="legend-row"><span><i class="dot swap"></i>スワップ / 日</span><span><i class="line fx"></i><b id="fxLegend">為替差損 7日平均</b></span><span><i class="dot event"></i>複数日付与</span></div>
+        <div class="chart-wrap"><canvas id="trendChart" aria-label="スワップと為替差損の推移"></canvas></div>
+        <div class="chart-foot"><span id="trendRange">—</span><span>同一時刻クロスレート · 基準23:00 JST</span></div>
+      </article>
     </section>
 
-    <section class="panel chart-panel" style="margin-top:12px">
-      <div class="panel-head chart-head">
+    <section class="section" id="events">
+      <div class="section-head">
         <div>
-          <div class="section-kicker">MULTI-DAY CREDIT · FIXED-TIME INTERVAL</div>
-          <h2>複数日付与のスワップ vs 為替差損</h2>
-          <p class="panel-sub">ヒロセの付与日数が3日以上の日を抽出し、3日・4日などのスワップ実額と、同じ日付→次回日付の固定時刻レートによる為替差損実額を比較します。曜日は固定しません。</p>
+          <div class="section-kicker">MULTI-DAY EVENTS</div>
+          <h2>複数日付与の実額比較</h2>
+          <p>3日・4日などの実際の複数日付与だけを抽出し、その日に得たスワップ総額と同じ開始日→次回日付の為替差損総額を比較します。</p>
         </div>
       </div>
-      <div class="chart-wrap" style="height:255px"><canvas id="tripleDayChart" aria-label="Multi-day swap versus aligned FX loss"></canvas></div>
-      <div class="chart-foot">
-        <span>各棒 = 選択中のUSD数量に換算</span>
-        <span id="tripleDaySummary">—</span>
-      </div>
+      <article class="card chart-card">
+        <div class="chart-wrap compact-chart"><canvas id="eventChart" aria-label="複数日付与のスワップと為替差損"></canvas></div>
+        <div class="summary-grid four" id="eventSummary">
+          <div><span>対象</span><b>—</b></div><div><span>スワップ勝ち</span><b>—</b></div><div><span>平均差</span><b>—</b></div><div><span>最大付与</span><b>—</b></div>
+        </div>
+      </article>
     </section>
 
-    <div class="lower-grid">
-      <section class="panel table-panel">
-        <div class="panel-head compact">
-          <div><div class="section-kicker">RECENT</div><h2>直近データ</h2></div>
-          <a class="source-link" href="https://hirose-fx.co.jp/contents/news/Swap" target="_blank" rel="noreferrer">公式ソース ↗</a>
+    <section class="section" id="returns">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">1× TOTAL RETURN</div>
+          <h2>通常ホールド vs 複数日付与回避</h2>
+          <p>通常保有と、複数日付与イベントの区間だけポジションを外すケースを比較します。回避時はスワップとその区間の為替損益を両方ゼロにし、往復100円 / 10,000 USDを控除します。</p>
+        </div>
+      </div>
+      <article class="card chart-card">
+        <div class="legend-row"><span><i class="line hold"></i>通常ホールド</span><span><i class="line avoid"></i>複数日回避</span></div>
+        <div class="chart-wrap compact-chart"><canvas id="returnChart" aria-label="USDTRYトータルリターン比較"></canvas></div>
+        <div class="summary-grid three" id="returnSummary"><div><span>通常</span><b>—</b></div><div><span>回避</span><b>—</b></div><div><span>差</span><b>—</b></div></div>
+      </article>
+    </section>
+
+    <section class="section split" id="data">
+      <article class="card data-card">
+        <div class="section-head compact">
+          <div><div class="section-kicker">RECENT DATA</div><h2>直近データ</h2></div>
+          <button class="plain-btn" id="downloadCsv" type="button">CSV ↓</button>
         </div>
         <div class="table-scroll">
           <table>
-            <thead><tr><th>日付</th><th>日数</th><th>売りpt</th><th>円換算合計</th><th>1日あたり</th><th>前回比</th></tr></thead>
+            <thead><tr><th>日付</th><th>日数</th><th>Swap/日</th><th>付与総額</th><th>USD/TRY</th><th>区間FX</th></tr></thead>
             <tbody id="recentBody"><tr><td colspan="6" class="loading-cell">読み込み中…</td></tr></tbody>
           </table>
         </div>
-      </section>
+      </article>
 
-      <aside class="panel method-panel">
-        <div class="section-kicker">METHOD</div>
-        <h2>計算方法</h2>
-        <div class="formula"><div>スワップ / 日</div><strong>売りスワップ円換算後 ÷ ヒロセ付与日数</strong></div>
-        <div class="formula fx-formula"><div>FX 7AVG</div><strong>(当日固定USD/TRY ÷ 7日前固定USD/TRY − 1) ÷ 7 × USD数量 × USD/JPY</strong></div>
-        <div class="formula fx-formula"><div>FX DAILY</div><strong>USD数量 × (次回固定USD/TRY − 当日固定USD/TRY) × 次回TRY/JPY ÷ 実カレンダー日数</strong></div>
-        <p>USD/TRY・USD/JPYはYahooの1時間足から<strong>23:00 JSTの同一時刻</strong>を優先して使用します。片方だけ別時刻を使うことはせず、23時が欠ける場合は両通貨が揃う時刻を最大3時間前まで探します。FX DAILYは「当日→次のヒロセ行」の保有区間を開始日の行へ割り当て、複数日付与はヒロセの実際の付与日数で判定します。FXの日次化にスワップ付与日数は使わず、次の行までの実カレンダー日数で割ります。</p>
+      <aside class="card method-card">
+        <div class="section-kicker">METHOD & QUALITY</div>
+        <h2>データ定義</h2>
         <dl class="method-list">
-          <div><dt>開始</dt><dd id="methodStart">2026/07/01</dd></div>
-          <div><dt>基準Lot</dt><dd>1,000 USD</dd></div>
-          <div><dt>為替履歴</dt><dd>2026/06中旬〜</dd></div>
-          <div><dt>固定レート</dt><dd>23:00 JST同時刻 · 最大3h前補完</dd></div>
-          <div><dt>FX割当</dt><dd>当日 → 次回を当日に計上</dd></div>
-          <div><dt>複数日判定</dt><dd>ヒロセ days ≥ 3</dd></div>
-          <div><dt>デフォルトFX</dt><dd>7日悪化率 ÷ 7</dd></div>
-          <div><dt>更新</dt><dd>平日 5:02–13:57 JST 約5分監視 + 15:37補完</dd></div>
+          <div><dt>Swap</dt><dd>ヒロセ公表円額 ÷ 付与日数</dd></div>
+          <div><dt>固定レート</dt><dd>23:00 JST 1h close</dd></div>
+          <div><dt>欠損時</dt><dd>同時刻ペアで最大3時間前</dd></div>
+          <div><dt>FX区間</dt><dd>当日固定時刻 → 次回固定時刻</dd></div>
+          <div><dt>複数日</dt><dd>公表 days ≥ 3</dd></div>
+          <div><dt>更新</dt><dd>平日高頻度監視 + 15:37補完</dd></div>
         </dl>
-        <a class="repo-link" href="https://github.com/ProtChan/USDTRY" target="_blank" rel="noreferrer">GitHub repository ↗</a>
+        <details>
+          <summary>計算式を見る</summary>
+          <div class="formula"><span>SWAP / DAY</span><b>sell_yen ÷ days</b></div>
+          <div class="formula"><span>FX INTERVAL</span><b>USD数量 × (次回USD/TRY − 当日USD/TRY) × 次回TRY/JPY</b></div>
+          <div class="formula"><span>NET INTERVAL</span><b>付与スワップ総額 − FX区間差損</b></div>
+        </details>
+        <div class="method-links"><a href="https://hirose-fx.co.jp/contents/news/Swap" target="_blank" rel="noreferrer">ヒロセ公式 ↗</a><a href="https://github.com/ProtChan/USDTRY" target="_blank" rel="noreferrer">GitHub ↗</a></div>
       </aside>
-    </div>
-
-    <section class="panel chart-panel" style="margin-top:12px">
-      <div class="panel-head chart-head">
-        <div>
-          <div class="section-kicker">EXTRA · TOTAL RETURN</div>
-          <h2>USD/TRY 売スワップ込みリターン推移</h2>
-          <p class="panel-sub">レバ1倍の通常ホールドと「ヒロセの付与日数が3日以上の日の区間だけ回避」を比較。3日・4日・曜日移動などを実データのdaysで判定し、その区間のスワップと為替変動を同時に外します。回避時は往復売買コスト100円 / 10,000 USDを控除します。</p>
-        </div>
-      </div>
-      <div class="chart-wrap" style="height:260px"><canvas id="returnChart" aria-label="USDTRY short total return comparison"></canvas></div>
-      <div class="chart-foot">
-        <span id="returnBaseline">Index 100 = — · 1x</span>
-        <span id="returnSummary">—</span>
-      </div>
     </section>
 
-    <section class="panel" style="margin-top:12px;padding:16px 18px">
-      <div class="section-kicker">DISCLAIMER</div>
-      <p class="panel-sub" style="margin-top:7px;line-height:1.7">本サイトは公開情報をもとにしたデータ整理・検証を目的とするものであり、特定の金融商品の売買を推奨するものではなく、投資助言を提供するものでもありません。表示値・計算結果・データ取得時刻には誤差や遅延が生じる場合があります。投資判断はご自身の責任で行ってください。</p>
-    </section>
-
-    <footer><span>USD/TRY Swap Watch</span><span id="generatedAt">—</span></footer>
+    <section class="card disclaimer"><b>DISCLAIMER</b><p>本サイトは公開情報の整理・検証を目的とし、投資助言ではありません。市場レートは外部データの1時間足終値であり、ヒロセの実約定ASKそのものではありません。</p></section>
+    <footer><span>USD/TRY Carry Dashboard</span><span id="generatedAt">—</span></footer>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="./app.js?v=20260911-anchor1"></script>
-  <script src="./chart-enhancements.js?v=20260911-anchor1"></script>
-  <script src="./return-chart.js?v=20260911-anchor1"></script>
+  <script src="./app.js?v=20260911-unified2"></script>
 </body>
 </html>
