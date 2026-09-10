@@ -20,6 +20,8 @@ const Dashboard = (() => {
   const fxDaily = row => scaled(row?.fx_cost_jpy_per_day);
   const fx7 = row => scaled(row?.fx_cost_7d_jpy_per_day);
   const fxTotal = row => scaled(row?.fx_cost_jpy_total);
+  const isMultiDay = row => Number(row?.days || 0) >= 3;
+  const trendSwap = row => state.fxMode === 'daily' && isMultiDay(row) ? swapTotal(row) : swapPerDay(row);
   const netInterval = row => {
     const swap = swapTotal(row);
     const fx = fxTotal(row);
@@ -78,7 +80,7 @@ const Dashboard = (() => {
   }
 
   function multiDayRows() {
-    return state.payload.data.filter(row => Number(row.days || 0) >= 3 && isFiniteNumber(row.fx_cost_jpy_total));
+    return state.payload.data.filter(row => isMultiDay(row) && isFiniteNumber(row.fx_cost_jpy_total));
   }
 
   function visibleRows() {
@@ -236,9 +238,9 @@ const Dashboard = (() => {
     if (!canvas || typeof Chart === 'undefined') return;
     const rows = visibleRows();
     const labels = rows.map(row => row.date);
-    const swap = rows.map(swapPerDay);
+    const swap = rows.map(trendSwap);
     const fx = rows.map(row => state.fxMode === 'avg7' ? fx7(row) : fxDaily(row));
-    const events = rows.map(row => Number(row.days || 0) >= 3 ? swapPerDay(row) : null);
+    const events = rows.map(row => isMultiDay(row) ? trendSwap(row) : null);
     const axis = axisBounds([swap, fx]);
 
     destroyChart('trend');
@@ -256,14 +258,16 @@ const Dashboard = (() => {
         const row = rows[i];
         const swapValue = swap[i];
         const fxValue = fx[i];
+        const multiDayActual = state.fxMode === 'daily' && isMultiDay(row);
         const difference = Number.isFinite(swapValue) && Number.isFinite(fxValue) ? swapValue - fxValue : null;
         const fxLabel = Number.isFinite(fxValue) && fxValue < 0 ? '為替差益' : '為替差損';
+        const swapSuffix = multiDayActual ? ` · ${row.days}日分実額` : ' / 日';
         const lines = [
-          `スワップ: ${money(swapValue)} / 日`,
+          `スワップ: ${money(swapValue)}${swapSuffix}`,
           `${fxLabel}: ${money(Number.isFinite(fxValue) ? Math.abs(fxValue) : null)} / 日`,
-          `差: ${signedMoney(difference)} / 日`,
+          `差: ${signedMoney(difference)}${multiDayActual ? '' : ' / 日'}`,
         ];
-        if (Number(row.days || 0) >= 3) lines.push(`複数日付与: ${row.days}日分`);
+        if (isMultiDay(row) && !multiDayActual) lines.push(`複数日付与: ${row.days}日分（日割り表示）`);
         return lines;
       },
     };
@@ -275,7 +279,7 @@ const Dashboard = (() => {
         labels,
         datasets: [
           {
-            label: 'スワップ / 日', data: swap,
+            label: state.fxMode === 'daily' ? 'スワップ（複数日=実額）' : 'スワップ / 日', data: swap,
             borderColor: '#5ce1a7', backgroundColor: 'rgba(92,225,167,.04)',
             borderWidth: 2.2, pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 14,
             tension: .20, fill: true, spanGaps: true,
@@ -296,7 +300,14 @@ const Dashboard = (() => {
       options,
     });
 
+    setText('swapLegend', state.fxMode === 'daily' ? 'スワップ（複数日=実額）' : 'スワップ / 日');
     setText('fxLegend', state.fxMode === 'avg7' ? '為替差損 7日平均' : '為替差損 / 日');
+    setText(
+      'trendDescription',
+      state.fxMode === 'avg7'
+        ? '日々の比較は7日平均の為替悪化率でノイズを抑えています。FX DAILYでは当日23時→次回ヒロセ日付23時の実区間を表示し、複数日付与のスワップは日割りせず実額を使います。'
+        : 'FX DAILYは当日23時→次回ヒロセ日付23時の為替差損を日次表示します。3日・4日などの複数日付与日は、スワップを日数で割らず付与総額のまま表示します。'
+    );
     const toggle = document.getElementById('toggleFxMode');
     if (toggle) {
       toggle.textContent = state.fxMode === 'avg7' ? 'FX 7AVG' : 'FX DAILY';
@@ -381,7 +392,7 @@ const Dashboard = (() => {
       const capital = benchmarkUsd * Number(row.usdjpy_rep_rate);
       if (!Number.isFinite(capital) || capital <= 0 || !Number.isFinite(fx)) return;
 
-      const event = Number(row.days || 0) >= 3;
+      const event = isMultiDay(row);
       const holdNet = swap - fx;
       const avoidNet = event ? -roundTripCost : holdNet;
       hold *= 1 + holdNet / capital;
@@ -446,12 +457,12 @@ const Dashboard = (() => {
       const fx = fxTotal(row);
       const fxClass = Number.isFinite(fx) && fx < 0 ? 'positive' : Number.isFinite(fx) ? 'negative' : '';
       return `<tr>
-        <td><a href="${row.source_url}" target="_blank" rel="noreferrer">${jpDate(row.date)}</a></td>
-        <td><span class="day-badge ${days >= 3 ? 'multi' : ''}">${days}D</span></td>
-        <td>${money(swapPerDay(row))}</td>
-        <td>${money(swapTotal(row))}</td>
-        <td>${isFiniteNumber(row.usdtry_rep_rate) ? rate4.format(Number(row.usdtry_rep_rate)) : '—'}</td>
-        <td class="${fxClass}">${Number.isFinite(fx) ? signedMoney(-fx) : '—'}</td>
+        <td data-label="日付"><a href="${row.source_url}" target="_blank" rel="noreferrer">${jpDate(row.date)}</a></td>
+        <td data-label="日数"><span class="day-badge ${days >= 3 ? 'multi' : ''}">${days}D</span></td>
+        <td data-label="Swap/日">${money(swapPerDay(row))}</td>
+        <td data-label="付与総額">${money(swapTotal(row))}</td>
+        <td data-label="USD/TRY">${isFiniteNumber(row.usdtry_rep_rate) ? rate4.format(Number(row.usdtry_rep_rate)) : '—'}</td>
+        <td data-label="区間FX" class="${fxClass}">${Number.isFinite(fx) ? signedMoney(-fx) : '—'}</td>
       </tr>`;
     }).join('');
   }
