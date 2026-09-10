@@ -1,12 +1,9 @@
-name: Update USDTRY swap and deploy
+name: Update USDTRY data and deploy
 
 on:
   schedule:
-    # Fast lightweight polling around the likely post-rollover publication window.
-    # GitHub cron is UTC. These two lines cover JST Mon-Fri 05:02-13:57 every 5 minutes.
     - cron: '2,7,12,17,22,27,32,37,42,47,52,57 20-23 * * 0-4'
     - cron: '2,7,12,17,22,27,32,37,42,47,52,57 0-4 * * 1-5'
-    # One forced full refresh at 15:37 JST to pick up late/revised market-rate data.
     - cron: '37 6 * * 1-5'
   workflow_dispatch:
   push:
@@ -19,10 +16,8 @@ permissions:
   pages: write
   id-token: write
 
-# A newer poll supersedes an older queued/running poll. Full runs normally finish well
-# inside the 5-minute interval, so this prevents stale polling runs from piling up.
 concurrency:
-  group: usdtry-swap-site
+  group: usdtry-site
   cancel-in-progress: true
 
 jobs:
@@ -35,9 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Scheduled high-frequency runs first do a cheap Hirose-only probe. It imports
-      # the existing parser but does NOT call the expensive Yahoo hourly enrichment.
-      - name: Probe Hirose for a new or revised USDTRY row
+      - name: Probe Hirose for a new or revised row
         id: probe
         if: github.event_name == 'schedule' && github.event.schedule != '37 6 * * 1-5'
         shell: bash
@@ -46,7 +39,7 @@ jobs:
           import os
           from scripts.build_data import SOURCE_PAGE, fetch_html, load_existing, parse_current_date, parse_usdtry_row
 
-          changed = True  # fail-open: if the probe itself has trouble, run the full pipeline
+          changed = True
           current_date = 'unknown'
           reason = 'probe-error'
           try:
@@ -60,7 +53,7 @@ jobs:
               changed = old is None or any(old.get(key) != live.get(key) for key in keys)
               reason = 'new-or-revised-row' if changed else 'unchanged'
           except Exception as exc:
-              print(f'probe failed; forcing full refresh: {exc}')
+              print(f'probe failed; forcing full pipeline: {exc}')
 
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as out:
               out.write(f'changed={str(changed).lower()}\n')
@@ -69,7 +62,7 @@ jobs:
           print(f'Hirose probe: date={current_date} changed={changed} reason={reason}')
           PY
 
-      - name: Decide whether a full refresh is needed
+      - name: Decide whether to run full pipeline
         id: decision
         shell: bash
         env:
@@ -91,32 +84,24 @@ jobs:
           fi
           echo "full=$full" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
-          echo "Refresh decision: full=$full reason=$reason"
+          echo "Pipeline decision: full=$full reason=$reason"
 
       - uses: actions/setup-python@v5
         if: steps.decision.outputs.full == 'true'
         with:
           python-version: '3.12'
 
-      - name: Validate scraper and chart code
+      - name: Validate source code
         if: steps.decision.outputs.full == 'true'
         run: |
-          python -m py_compile scripts/build_data.py scripts/align_market_day.py
+          python -m py_compile scripts/build_data.py scripts/align_market_day.py scripts/update_data.py
           node --check app.js
-          node --check chart-enhancements.js
-          node --check return-chart.js
-          node --check beta/app.js
-          node --check beta/net-interval.js
 
-      - name: Fetch Hirose USDTRY swap
+      - name: Run canonical data pipeline
         if: steps.decision.outputs.full == 'true'
-        run: python scripts/build_data.py
+        run: python scripts/update_data.py
 
-      - name: Align fixed market rates and FX intervals
-        if: steps.decision.outputs.full == 'true'
-        run: python scripts/align_market_day.py
-
-      - name: Commit updated data
+      - name: Commit generated data
         if: steps.decision.outputs.full == 'true'
         run: |
           git config user.name "github-actions[bot]"
@@ -125,7 +110,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No data changes"
           else
-            git commit -m "data: update USDTRY swap"
+            git commit -m "data: update USDTRY dashboard"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
@@ -134,10 +119,10 @@ jobs:
         if: steps.decision.outputs.full == 'true'
         run: |
           rm -rf _site
-          mkdir -p _site/data
-          cp index.html styles.css mobile-fix.css app.js chart-enhancements.js return-chart.js _site/
+          mkdir -p _site/data _site/beta
+          cp index.html styles.css app.js _site/
           cp data/usdtry.json _site/data/
-          cp -R beta _site/beta
+          cp beta/index.html _site/beta/index.html
           touch _site/.nojekyll
 
       - name: Check or enable GitHub Pages
@@ -145,27 +130,22 @@ jobs:
         id: pages
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
           api="https://api.github.com/repos/${GITHUB_REPOSITORY}/pages"
           headers=(-H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GH_TOKEN}" -H "X-GitHub-Api-Version: 2022-11-28")
-
           code=$(curl -sS -o /tmp/pages.json -w "%{http_code}" "${headers[@]}" "$api")
           if [ "$code" = "200" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
           create_code=$(curl -sS -o /tmp/pages-create.json -w "%{http_code}" -X POST \
-            "${headers[@]}" -H "Content-Type: application/json" \
-            -d '{"build_type":"workflow"}' "$api")
-          echo "Pages enable attempt: HTTP $create_code"
-          cat /tmp/pages-create.json || true
-
+            "${headers[@]}" -H "Content-Type: application/json" -d '{"build_type":"workflow"}' "$api")
           if [ "$create_code" = "201" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "Pages could not be enabled with GITHUB_TOKEN; deployment is skipped without failing data updates."
+            cat /tmp/pages-create.json || true
           fi
 
       - name: Configure Pages
