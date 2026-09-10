@@ -352,6 +352,7 @@ footer { display: flex; justify-content: space-between; gap: 16px; padding: 20px
   .metric > b { font-size: 23px; }
   .section { margin-top: 24px; }
   .section-head { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .section-head.compact { flex-direction: row; align-items: center; }
   .controls { width: 100%; justify-content: space-between; }
   .chart-card { padding: 14px 12px 12px; }
   .chart-wrap { height: 270px; }
@@ -360,6 +361,57 @@ footer { display: flex; justify-content: space-between; gap: 16px; padding: 20px
   .summary-grid.four { grid-template-columns: 1fr 1fr; }
   .summary-grid.three { grid-template-columns: 1fr; }
   .data-card, .method-card { padding: 16px; }
+
+  .table-scroll { overflow: visible; margin-top: 10px; }
+  .table-scroll table { display: block; min-width: 0; width: 100%; }
+  .table-scroll thead { display: none; }
+  .table-scroll tbody { display: grid; gap: 8px; width: 100%; }
+  .table-scroll tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px 14px;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(157,181,209,.11);
+    border-radius: 13px;
+    background: rgba(255,255,255,.018);
+  }
+  .table-scroll td {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    text-align: right;
+    font-size: 11px;
+  }
+  .table-scroll td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    color: #70849b;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+  .table-scroll td:first-child {
+    grid-column: 1 / -1;
+    padding-bottom: 8px;
+    margin-bottom: 1px;
+    border-bottom: 1px solid rgba(157,181,209,.09);
+    text-align: left;
+    font-weight: 800;
+  }
+  .table-scroll td:first-child a { margin-left: auto; }
+  .table-scroll .loading-cell {
+    grid-column: 1 / -1;
+    display: block;
+    padding: 10px 0;
+    text-align: center !important;
+  }
+  .table-scroll .loading-cell::before { display: none; }
 }
 
 @media (max-width: 430px) {
@@ -374,4 +426,6 @@ footer { display: flex; justify-content: space-between; gap: 16px; padding: 20px
   .legend-row { gap: 11px; }
   .seg-btn { min-width: 39px; }
   .controls .plain-btn { margin-left: auto; }
+  .table-scroll tr { gap: 7px 10px; padding: 11px; }
+  .table-scroll td { font-size: 10px; }
 }
