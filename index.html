@@ -8,7 +8,7 @@
   <title>USD/TRY Carry Dashboard</title>
   <meta name="description" content="ヒロセ通商 LION FX のUSD/TRY売りスワップ、固定時刻為替差損、複数日付与、トータルリターンを一つの定義で確認するダッシュボード" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-  <link rel="stylesheet" href="./styles.css?v=20260911-unified2" />
+  <link rel="stylesheet" href="./styles.css?v=20260911-mobile1" />
 </head>
 <body>
   <header class="site-header">
@@ -72,7 +72,7 @@
         <div>
           <div class="section-kicker">CORE VIEW</div>
           <h2>スワップと為替コスト</h2>
-          <p id="trendDescription">日々の比較は7日平均の為替悪化率でノイズを抑えています。FX DAILYへ切り替えると、当日23時→次回ヒロセ日付23時の実区間を日割り表示します。</p>
+          <p id="trendDescription">日々の比較は7日平均の為替悪化率でノイズを抑えています。FX DAILYでは当日23時→次回ヒロセ日付23時の実区間を表示し、複数日付与のスワップは日割りせず実額を使います。</p>
         </div>
         <div class="controls">
           <div class="segmented" role="group" aria-label="表示期間">
@@ -84,7 +84,7 @@
         </div>
       </div>
       <article class="card chart-card">
-        <div class="legend-row"><span><i class="dot swap"></i>スワップ / 日</span><span><i class="line fx"></i><b id="fxLegend">為替差損 7日平均</b></span><span><i class="dot event"></i>複数日付与</span></div>
+        <div class="legend-row"><span><i class="dot swap"></i><b id="swapLegend">スワップ / 日</b></span><span><i class="line fx"></i><b id="fxLegend">為替差損 7日平均</b></span><span><i class="dot event"></i>複数日付与</span></div>
         <div class="chart-wrap"><canvas id="trendChart" aria-label="スワップと為替差損の推移"></canvas></div>
         <div class="chart-foot"><span id="trendRange">—</span><span>同一時刻クロスレート · 基準23:00 JST</span></div>
       </article>
@@ -139,7 +139,7 @@
         <div class="section-kicker">METHOD & QUALITY</div>
         <h2>データ定義</h2>
         <dl class="method-list">
-          <div><dt>Swap</dt><dd>ヒロセ公表円額 ÷ 付与日数</dd></div>
+          <div><dt>Swap</dt><dd>通常は円額÷付与日数 / DAILY複数日は総額</dd></div>
           <div><dt>固定レート</dt><dd>23:00 JST 1h close</dd></div>
           <div><dt>欠損時</dt><dd>同時刻ペアで最大3時間前</dd></div>
           <div><dt>FX区間</dt><dd>当日固定時刻 → 次回固定時刻</dd></div>
@@ -149,6 +149,7 @@
         <details>
           <summary>計算式を見る</summary>
           <div class="formula"><span>SWAP / DAY</span><b>sell_yen ÷ days</b></div>
+          <div class="formula"><span>FX DAILY DISPLAY · MULTI-DAY</span><b>days ≥ 3 のスワップは sell_yen 実額</b></div>
           <div class="formula"><span>FX INTERVAL</span><b>USD数量 × (次回USD/TRY − 当日USD/TRY) × 次回TRY/JPY</b></div>
           <div class="formula"><span>NET INTERVAL</span><b>付与スワップ総額 − FX区間差損</b></div>
         </details>
@@ -161,6 +162,6 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="./app.js?v=20260911-unified2"></script>
+  <script src="./app.js?v=20260911-mobile1"></script>
 </body>
 </html>
