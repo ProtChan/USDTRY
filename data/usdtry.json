@@ -11,7 +11,7 @@
     "source_csv": "https://hirose-fx.co.jp/swap/lionfx_swap.csv",
     "swap_source": "Hirose LION FX published swap table",
     "swap_normalization": "sell_yen / published accrual days; 0-day rows have no per-day value",
-    "swap_updated_at": "2026-09-11T00:09:26+00:00",
+    "swap_updated_at": "2026-09-11T11:46:05+00:00",
     "pages_fetched_this_run": 1,
     "description": "Hirose USD/TRY sell swap with fixed-time FX-cost intervals",
     "market_rate_source": "Yahoo Finance chart API: USDTRY=X and USDJPY=X",
@@ -22,7 +22,7 @@
     "fx_cost_method": "current fixed-time USDTRY to next Hirose-row fixed-time USDTRY, converted at next-row TRYJPY",
     "fx_cost_daily_method": "interval FX cost divided by elapsed calendar days",
     "fx_cost_sign": "positive=FX loss for USDTRY short; negative=FX gain",
-    "market_updated_at": "2026-09-11T00:09:27+00:00",
+    "market_updated_at": "2026-09-11T11:46:06+00:00",
     "pipeline": "scripts/update_data.py",
     "pipeline_version": 2
   },
