@@ -12,7 +12,6 @@ const Dashboard = (() => {
   const rate4 = new Intl.NumberFormat('ja-JP', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
 
   const isFiniteNumber = value => value !== null && value !== '' && Number.isFinite(Number(value));
-  const number = value => isFiniteNumber(value) ? Number(value) : null;
   const scale = () => state.qty / Number(state.payload?.meta?.lot_size || 1000);
   const scaled = value => isFiniteNumber(value) ? Number(value) * scale() : null;
   const swapPerDay = row => scaled(row?.sell_yen_per_day);
@@ -21,7 +20,12 @@ const Dashboard = (() => {
   const fx7 = row => scaled(row?.fx_cost_7d_jpy_per_day);
   const fxTotal = row => scaled(row?.fx_cost_jpy_total);
   const isMultiDay = row => Number(row?.days || 0) >= 3;
-  const trendSwap = row => state.fxMode === 'daily' && isMultiDay(row) ? swapTotal(row) : swapPerDay(row);
+
+  // Display invariant:
+  // FX 7AVG -> normalized swap/day.
+  // FX DAILY -> actual credited swap on each Hirose row (sell_yen), with no day division.
+  const trendSwap = row => state.fxMode === 'daily' ? swapTotal(row) : swapPerDay(row);
+
   const netInterval = row => {
     const swap = swapTotal(row);
     const fx = fxTotal(row);
@@ -176,7 +180,6 @@ const Dashboard = (() => {
     setText('latestSwapMeta', `${jpDate(latest.date)} · ${latest.days}日分 · ${state.qty.toLocaleString('ja-JP')} USD`);
     setText('latestSwapTotal', money(swapTotal(latest)));
     setText('latestSwapPoints', yen.format(Number(latest.sell_points || 0)));
-
     setText('avg7', money(mean(swaps.slice(-7).map(swapPerDay))));
     setText('avg30', money(mean(swaps.slice(-30).map(swapPerDay))));
 
@@ -236,6 +239,7 @@ const Dashboard = (() => {
   function renderTrend() {
     const canvas = document.getElementById('trendChart');
     if (!canvas || typeof Chart === 'undefined') return;
+
     const rows = visibleRows();
     const labels = rows.map(row => row.date);
     const swap = rows.map(trendSwap);
@@ -249,6 +253,7 @@ const Dashboard = (() => {
     options.scales.y.max = axis.max;
     options.scales.y.ticks.callback = value => `${yen0.format(value)}円`;
     options.scales.x.ticks.callback = value => shortDate(labels[value]);
+    options.plugins.tooltip.filter = item => item.datasetIndex === 0;
     options.plugins.tooltip.callbacks = {
       title(items) {
         return items.length ? jpDate(labels[items[0].dataIndex]) : '';
@@ -258,20 +263,22 @@ const Dashboard = (() => {
         const row = rows[i];
         const swapValue = swap[i];
         const fxValue = fx[i];
-        const multiDayActual = state.fxMode === 'daily' && isMultiDay(row);
+        const dailyActual = state.fxMode === 'daily';
         const difference = Number.isFinite(swapValue) && Number.isFinite(fxValue) ? swapValue - fxValue : null;
         const fxLabel = Number.isFinite(fxValue) && fxValue < 0 ? '為替差益' : '為替差損';
-        const swapSuffix = multiDayActual ? ` · ${row.days}日分実額` : ' / 日';
+        const days = Number(row.days || 0);
+        const swapSuffix = dailyActual
+          ? (days > 1 ? ` · ${days}日分実額` : ' · 実額')
+          : ' / 日';
         const lines = [
           `スワップ: ${money(swapValue)}${swapSuffix}`,
           `${fxLabel}: ${money(Number.isFinite(fxValue) ? Math.abs(fxValue) : null)} / 日`,
-          `差: ${signedMoney(difference)}${multiDayActual ? '' : ' / 日'}`,
+          `差: ${signedMoney(difference)}${dailyActual ? '' : ' / 日'}`,
         ];
-        if (isMultiDay(row) && !multiDayActual) lines.push(`複数日付与: ${row.days}日分（日割り表示）`);
+        if (!dailyActual && isMultiDay(row)) lines.push(`複数日付与: ${days}日分（日割り表示）`);
         return lines;
       },
     };
-    options.plugins.tooltip.filter = item => item.datasetIndex === 0;
 
     state.charts.trend = new Chart(canvas, {
       type: 'line',
@@ -279,46 +286,67 @@ const Dashboard = (() => {
         labels,
         datasets: [
           {
-            label: state.fxMode === 'daily' ? 'スワップ（複数日=実額）' : 'スワップ / 日', data: swap,
-            borderColor: '#5ce1a7', backgroundColor: 'rgba(92,225,167,.04)',
-            borderWidth: 2.2, pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 14,
-            tension: .20, fill: true, spanGaps: true,
+            label: state.fxMode === 'daily' ? 'スワップ実額' : 'スワップ / 日',
+            data: swap,
+            borderColor: '#5ce1a7',
+            backgroundColor: 'rgba(92,225,167,.04)',
+            borderWidth: 2.2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            pointHitRadius: 14,
+            tension: .20,
+            fill: true,
+            spanGaps: true,
           },
           {
-            label: state.fxMode === 'avg7' ? '為替差損 7AVG' : '為替差損 / 日', data: fx,
-            borderColor: '#ff9d7a', backgroundColor: 'transparent',
-            borderWidth: 2, pointRadius: 0, tension: state.fxMode === 'avg7' ? .28 : .12,
-            fill: false, spanGaps: true,
+            label: state.fxMode === 'avg7' ? '為替差損 7AVG' : '為替差損 / 日',
+            data: fx,
+            borderColor: '#ff9d7a',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: state.fxMode === 'avg7' ? .28 : .12,
+            fill: false,
+            spanGaps: true,
           },
           {
-            label: '複数日付与', data: events, showLine: false,
-            pointRadius: 4.2, pointHoverRadius: 5, pointBackgroundColor: '#f6c56d',
-            pointBorderColor: '#07111f', pointBorderWidth: 1.5,
+            label: '複数日付与',
+            data: events,
+            showLine: false,
+            pointRadius: 4.2,
+            pointHoverRadius: 5,
+            pointBackgroundColor: '#f6c56d',
+            pointBorderColor: '#07111f',
+            pointBorderWidth: 1.5,
           },
         ],
       },
       options,
     });
 
-    setText('swapLegend', state.fxMode === 'daily' ? 'スワップ（複数日=実額）' : 'スワップ / 日');
+    setText('swapLegend', state.fxMode === 'daily' ? 'スワップ実額' : 'スワップ / 日');
     setText('fxLegend', state.fxMode === 'avg7' ? '為替差損 7日平均' : '為替差損 / 日');
     setText(
       'trendDescription',
       state.fxMode === 'avg7'
-        ? '日々の比較は7日平均の為替悪化率でノイズを抑えています。FX DAILYでは当日23時→次回ヒロセ日付23時の実区間を表示し、複数日付与のスワップは日割りせず実額を使います。'
-        : 'FX DAILYは当日23時→次回ヒロセ日付23時の為替差損を日次表示します。3日・4日などの複数日付与日は、スワップを日数で割らず付与総額のまま表示します。'
+        ? '7AVGではスワップを付与日数で割った日次額と、7日平均の為替悪化率を表示します。FX DAILYへ切り替えるとスワップは全行で付与実額を使います。'
+        : 'FX DAILYではスワップを日数で割らず、各ヒロセ日付で実際に付与された sell_yen 総額をそのまま表示します。複数日付与は3日・4日分の総額としてグラフに反映します。'
     );
+
     const toggle = document.getElementById('toggleFxMode');
     if (toggle) {
       toggle.textContent = state.fxMode === 'avg7' ? 'FX 7AVG' : 'FX DAILY';
       toggle.classList.toggle('active', state.fxMode === 'avg7');
     }
-    if (rows.length) setText('trendRange', `${jpDate(rows[0].date)} — ${jpDate(rows[rows.length - 1].date)} · ${rows.length} rows`);
+    if (rows.length) {
+      setText('trendRange', `${jpDate(rows[0].date)} — ${jpDate(rows[rows.length - 1].date)} · ${rows.length} rows`);
+    }
   }
 
   function renderEvents() {
     const canvas = document.getElementById('eventChart');
     if (!canvas || typeof Chart === 'undefined') return;
+
     const rows = multiDayRows();
     const labels = rows.map(row => `${shortDate(row.date)} · ${row.days}D`);
     const swaps = rows.map(swapTotal);
@@ -357,8 +385,22 @@ const Dashboard = (() => {
       data: {
         labels,
         datasets: [
-          { label: 'スワップ総額', data: swaps, backgroundColor: 'rgba(92,225,167,.72)', borderColor: '#5ce1a7', borderWidth: 1, borderRadius: 5 },
-          { label: '為替差損', data: fx, backgroundColor: 'rgba(255,157,122,.68)', borderColor: '#ff9d7a', borderWidth: 1, borderRadius: 5 },
+          {
+            label: 'スワップ総額',
+            data: swaps,
+            backgroundColor: 'rgba(92,225,167,.72)',
+            borderColor: '#5ce1a7',
+            borderWidth: 1,
+            borderRadius: 5,
+          },
+          {
+            label: '為替差損',
+            data: fx,
+            backgroundColor: 'rgba(255,157,122,.68)',
+            borderColor: '#ff9d7a',
+            borderWidth: 1,
+            borderRadius: 5,
+          },
         ],
       },
       options,
@@ -405,6 +447,7 @@ const Dashboard = (() => {
   function renderReturns() {
     const canvas = document.getElementById('returnChart');
     if (!canvas || typeof Chart === 'undefined') return;
+
     const points = returnSeries();
     if (points.length < 2) return;
     const labels = points.map(point => point.date);
@@ -451,6 +494,7 @@ const Dashboard = (() => {
   function renderRecent() {
     const body = document.getElementById('recentBody');
     if (!body) return;
+
     const rows = [...state.payload.data].reverse().slice(0, 14);
     body.innerHTML = rows.map(row => {
       const days = Number(row.days || 0);
@@ -541,7 +585,9 @@ const Dashboard = (() => {
   }
 
   function validatePayload(payload) {
-    if (!payload || !Array.isArray(payload.data) || !payload.data.length) throw new Error('data array is empty');
+    if (!payload || !Array.isArray(payload.data) || !payload.data.length) {
+      throw new Error('data array is empty');
+    }
     if (!payload.meta || payload.meta.latest_date !== payload.data[payload.data.length - 1].date) {
       throw new Error('metadata and data are inconsistent');
     }
