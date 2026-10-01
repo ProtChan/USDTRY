@@ -102,7 +102,7 @@ button { -webkit-tap-highlight-color: transparent; }
   grid-template-columns: minmax(0, 1fr) 280px;
   gap: 28px;
   align-items: end;
-  padding: 28px 4px 24px;
+  padding: 12px 4px 20px;
 }
 .eyebrow, .section-kicker, .card-label {
   color: #9eb1c7;
@@ -342,7 +342,7 @@ footer { display: flex; justify-content: space-between; gap: 16px; padding: 20px
   .header-actions { margin-left: auto; }
   .header-actions .seg-btn { min-width: 70px; }
   .shell { width: min(100% - 18px, 1180px); padding-top: 18px; }
-  .hero { padding-top: 18px; }
+  .hero { padding-top: 8px; }
   h1 { font-size: 39px; }
   .hero-copy p { font-size: 12px; }
   .primary-kpi { min-height: 235px; padding: 18px; }
