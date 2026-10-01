@@ -774,3 +774,216 @@ footer { display: flex; justify-content: space-between; gap: 16px; padding: 20px
     text-align: right;
   }
 }
+
+/* layout6: flexible desktop width and balanced top grid */
+.header-inner,
+.shell {
+  width: min(1540px, calc(100% - 48px));
+}
+
+.shell {
+  padding-top: 16px;
+}
+
+.overview-grid {
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 1.12fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.primary-kpi {
+  min-height: 430px;
+  height: 100%;
+  padding: 24px 26px 20px;
+}
+
+.spark-wrap {
+  flex: 1 1 auto;
+  min-height: 100px;
+  height: auto;
+  margin-top: 16px;
+  padding-top: 6px;
+}
+
+.spark-wrap canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.overview-side {
+  height: 100%;
+  grid-template-rows: 96px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.freshness-card {
+  min-width: 0;
+  min-height: 0;
+  height: 96px;
+  grid-template-columns: minmax(150px, .78fr) minmax(0, 2.22fr);
+  padding: 13px 14px;
+}
+
+.freshness-card-title {
+  min-width: 0;
+  padding-right: 14px;
+}
+
+.freshness-card-title > b {
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.freshness {
+  min-width: 0;
+}
+
+.freshness > div {
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.freshness span,
+.freshness b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.freshness b {
+  font-size: clamp(10px, .78vw, 12px);
+}
+
+.metric-grid {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.metric {
+  height: 100%;
+  min-height: 0;
+  padding: 19px 20px;
+}
+
+.metric > b {
+  font-size: clamp(27px, 2.6vw, 38px);
+}
+
+.section.core-panel {
+  margin-top: 14px;
+}
+
+@media (max-width: 1260px) {
+  .header-inner,
+  .shell {
+    width: min(100% - 32px, 1240px);
+  }
+
+  .overview-grid {
+    grid-template-columns: minmax(0, .98fr) minmax(0, 1.08fr);
+  }
+
+  .freshness-card {
+    height: auto;
+    min-height: 104px;
+    grid-template-columns: 1fr;
+    gap: 9px;
+    padding: 12px 14px;
+  }
+
+  .freshness-card-title {
+    padding-right: 0;
+  }
+
+  .freshness-card-title .freshness-icon {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+  }
+
+  .freshness-card-title .freshness-icon::before {
+    inset: 7px;
+  }
+
+  .freshness-card-title .freshness-icon::after {
+    left: 14px;
+    top: 9px;
+  }
+
+  .freshness {
+    border-top: 1px solid var(--line);
+    padding-top: 8px;
+  }
+
+  .freshness > div:first-child {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .overview-side {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 980px) {
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .primary-kpi {
+    min-height: 340px;
+  }
+
+  .spark-wrap {
+    min-height: 78px;
+    max-height: 105px;
+  }
+
+  .overview-side {
+    height: auto;
+  }
+
+  .metric-grid {
+    height: auto;
+    grid-template-rows: repeat(2, 118px);
+  }
+}
+
+@media (max-width: 720px) {
+  .header-inner,
+  .shell {
+    width: min(100% - 18px, 1180px);
+  }
+
+  .primary-kpi {
+    min-height: 310px;
+    padding: 18px;
+  }
+
+  .spark-wrap {
+    min-height: 68px;
+    max-height: 82px;
+  }
+
+  .freshness-card {
+    min-height: 0;
+  }
+
+  .freshness {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .metric-grid {
+    grid-template-rows: repeat(2, 104px);
+  }
+}
+
+@media (max-width: 430px) {
+  .freshness {
+    grid-template-columns: 1fr;
+  }
+}
