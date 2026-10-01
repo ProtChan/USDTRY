@@ -8,7 +8,7 @@
   <title>USD/TRY</title>
   <meta name="description" content="ヒロセ通商 LION FX のUSD/TRY売りスワップ、固定時刻為替差損、複数日付与、トータルリターンを一つの定義で確認するダッシュボード" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-  <link rel="stylesheet" href="./styles.css?v=20261001-layout4" />
+  <link rel="stylesheet" href="./styles.css?v=20261001-layout5" />
 </head>
 <body>
   <header class="site-header">
@@ -40,9 +40,11 @@
           <div class="eyebrow"><span class="live-dot"></span> HIROSE LION FX · USD/TRY SHORT</div>
           <p>スワップ・為替差損・複数日付与・トータルリターンを一つの画面で確認。</p>
         </div>
+
         <div class="card-label">LATEST SWAP / DAY</div>
         <div class="primary-value" id="latestSwap">—</div>
         <div class="primary-meta" id="latestSwapMeta">—</div>
+
         <div class="mini-row">
           <span>付与総額 <b id="latestSwapTotal">—</b></span>
           <span>売りpt <b id="latestSwapPoints">—</b></span>
@@ -50,20 +52,29 @@
         <div class="spark-wrap"><canvas id="sparkChart" aria-label="最近のスワップ推移"></canvas></div>
       </article>
 
-      <div class="metric-grid">
-        <div class="freshness overview-freshness">
-          <span>最新スワップ</span><b id="freshSwap">—</b>
-          <span>為替アンカー</span><b id="freshAnchor">—</b>
-          <span>生成</span><b id="freshGenerated">—</b>
+      <div class="overview-side">
+        <article class="card freshness-card">
+          <div class="freshness-card-title">
+            <span class="freshness-icon" aria-hidden="true"></span>
+            <b>データの更新状況</b>
+          </div>
+          <div class="freshness">
+            <div><span>最新スワップ</span><b id="freshSwap">—</b></div>
+            <div><span>為替アンカー</span><b id="freshAnchor">—</b></div>
+            <div><span>生成</span><b id="freshGenerated">—</b></div>
+          </div>
+        </article>
+
+        <div class="metric-grid">
+          <article class="card metric"><span>7 OBS AVG</span><b id="avg7">—</b><small>直近7付与日</small></article>
+          <article class="card metric"><span>30 OBS AVG</span><b id="avg30">—</b><small>直近30付与日</small></article>
+          <article class="card metric emphasis"><span>LATEST INTERVAL NET</span><b id="latestNet">—</b><small id="latestNetMeta">確定済み最新区間</small></article>
+          <article class="card metric"><span>30D INTERVAL NET</span><b id="net30">—</b><small>直近30暦日の確定区間合計</small></article>
         </div>
-        <article class="card metric"><span>7 OBS AVG</span><b id="avg7">—</b><small>直近7付与日</small></article>
-        <article class="card metric"><span>30 OBS AVG</span><b id="avg30">—</b><small>直近30付与日</small></article>
-        <article class="card metric emphasis"><span>LATEST INTERVAL NET</span><b id="latestNet">—</b><small id="latestNetMeta">確定済み最新区間</small></article>
-        <article class="card metric"><span>30D INTERVAL NET</span><b id="net30">—</b><small>直近30暦日の確定区間合計</small></article>
       </div>
     </section>
 
-    <section class="section" id="trend">
+    <section class="section card core-panel" id="trend">
       <div class="section-head">
         <div>
           <div class="section-kicker">CORE VIEW</div>
@@ -79,11 +90,9 @@
           <button class="plain-btn active" id="toggleFxMode" type="button">FX 7AVG</button>
         </div>
       </div>
-      <article class="card chart-card">
-        <div class="legend-row"><span><i class="dot swap"></i><b id="swapLegend">スワップ / 日</b></span><span><i class="line fx"></i><b id="fxLegend">為替差損 7日平均</b></span><span><i class="dot event"></i>複数日付与</span></div>
-        <div class="chart-wrap"><canvas id="trendChart" aria-label="スワップと為替差損の推移"></canvas></div>
-        <div class="chart-foot"><span id="trendRange">—</span><span>同一時刻クロスレート · 基準23:00 JST</span></div>
-      </article>
+      <div class="legend-row"><span><i class="dot swap"></i><b id="swapLegend">スワップ / 日</b></span><span><i class="line fx"></i><b id="fxLegend">為替差損 7日平均</b></span><span><i class="dot event"></i>複数日付与</span></div>
+      <div class="chart-wrap"><canvas id="trendChart" aria-label="スワップと為替差損の推移"></canvas></div>
+      <div class="chart-foot"><span id="trendRange">—</span><span>同一時刻クロスレート · 基準23:00 JST</span></div>
     </section>
 
     <section class="section" id="events">
